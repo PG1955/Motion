@@ -233,6 +233,13 @@ class Picamera2:
         """Return the stream configuration for the named stream."""
         return self.camera_config[name]
 
+    @classmethod
+    def load_tuning_file(cls, camera_tuning_file):
+        pass
+
+    def check_stream_config(self, param, param1):
+        pass
+
 
 def close(self) -> None:
     self.capture.release()
