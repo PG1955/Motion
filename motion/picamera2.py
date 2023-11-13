@@ -10,6 +10,9 @@ class Picamera2:
     signal_event = None
 
     def __init__(self):
+        self.controls = None
+        self.AnalogueGain = None
+        self.ExposureTime = None
         self.camera_config = None
         self.sensor_format = None
         self.camera = 0
@@ -23,6 +26,17 @@ class Picamera2:
         self.lores_height = None
         self.main_width = None
         self.main_height = None
+        self.AnalogueGain = None
+        self.ExposureTime = None
+
+    def __enter__(self):
+        pass
+        # self._lock.acquire()
+        # return self
+
+    def __exit__(self, exc_type, exc_value, tb):
+        pass
+        # self._lock.release()
 
     def create_video_configuration(self, main={}, lores=None, raw=None, transform=libcamera.Transform(),
                                    colour_space=None, buffer_count=6, controls={}, display="main",
@@ -63,7 +77,6 @@ class Picamera2:
         self._add_display_and_encode(config, display, encode)
         return config
 
-
     def create_preview_configuration(self, main={}, lores=None, raw=None, transform=False,
                                      colour_space=None, buffer_count=4, controls={},
                                      display="main", encode="main"):
@@ -98,7 +111,7 @@ class Picamera2:
         return None
 
     def start(self) -> None:
-        if self.capture == None:
+        if self.capture is None:
             self.capture = cv2.VideoCapture(0)
 
     def capture_array_(self, name) -> bool:
@@ -112,7 +125,7 @@ class Picamera2:
         lores_size = (self.lores_width, self.lores_height)
         if name == "main" and not image_size == main_size and not main_size == (None, None):
             shape = image.shape
-            print(f'Shape: {shape} Size: {main_size}')
+            # print(f'Shape: {shape} Size: {main_size}')
             image = cv2.resize(image, main_size, interpolation=cv2.INTER_LINEAR)
 
         elif name == "lores" and not image_size == lores_size and not lores_size == (None, None):
@@ -233,9 +246,11 @@ class Picamera2:
         """Return the stream configuration for the named stream."""
         return self.camera_config[name]
 
-    @classmethod
-    def load_tuning_file(cls, camera_tuning_file):
-        pass
+    def capture_metadata(self):
+        return {'ExposureTime': 0.0, 'AnalogueGain': 0.0, 'ColourGains': (0.0, 0.0)}
+
+    def set_controls(self, param):
+        return {'ExposureTime': 0.0, 'AnalogueGain': 0.0, 'ColourGains': (0.0, 0.0)}
 
     def check_stream_config(self, param, param1):
         pass

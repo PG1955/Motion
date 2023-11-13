@@ -15,7 +15,7 @@ class MovementCSV:
         self.debug = debug
         self.interval = interval
         self.trigger_point = 0
-        self.frames_checked = 0
+        self.trigger_point_frames = 0
         self.subtraction_threshold = 0
         self.subtraction_history = 0
         self.motion_level = 0  # Current motion level.
@@ -31,6 +31,7 @@ class MovementCSV:
         self.now = datetime.now()
         self.csv_file = "peakMovement.csv"
         self.columns = ['Timestamp', 'Trigger Point', 'Trigger Point Base',
+                        'Trigger Point Frames',
                         'Subtraction Threshold', 'Subtraction History', 'Average',
                         'Highest Peak', 'Trigger Value']
         if not os.path.isfile(self.csv_file):
@@ -49,12 +50,13 @@ class MovementCSV:
     Called after the parameters are read.
     """
 
-    def update_parameters(self, _trigger_point, _trigger_point_base,
+    def update_parameters(self, _trigger_point, _trigger_point_base, _trigger_point_frames,
                           _subtraction_threshold, _subtraction_history):
         if self.debug:
             print('CSV:update_parameters')
         self.trigger_point = _trigger_point
         self.trigger_point_base = _trigger_point_base
+        self.trigger_point_frames = _trigger_point_frames
         self.subtraction_threshold = _subtraction_threshold
         self.subtraction_history = _subtraction_history
         if not os.path.isfile(self.csv_file):
@@ -121,6 +123,7 @@ class MovementCSV:
                 _writer.writerow({"Timestamp": timestamp,
                                   'Trigger Point': self.trigger_point,
                                   'Trigger Point Base': self.trigger_point_base,
+                                  'Trigger Point Frames': self.trigger_point_frames,
                                   'Subtraction Threshold': self.subtraction_threshold,
                                   'Subtraction History': self.subtraction_history,
                                   "Average": self.movement_average,
@@ -134,6 +137,7 @@ class MovementCSV:
                 _writer.writerow({"Timestamp": timestamp,
                                   'Trigger Point': 1,
                                   'Trigger Point Base': 1,
+                                  'Trigger Point Frames': 1,
                                   'Subtraction Threshold': self.subtraction_threshold,
                                   'Subtraction History': self.subtraction_history,
                                   "Average": 1,
@@ -155,6 +159,7 @@ class MovementCSV:
             return _writer.writerow({"Timestamp": timestamp,
                                      'Trigger Point': self.trigger_point,
                                      'Trigger Point Base': self.trigger_point_base,
+                                     'Trigger Point Frames': self.trigger_point_frames,
                                      'Subtraction Threshold': self.subtraction_threshold,
                                      'Subtraction History': self.subtraction_history,
                                      "Average": self.movement_average,
