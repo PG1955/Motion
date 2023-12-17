@@ -1,1002 +1,1002 @@
 Point,Milliseconds
 04-Rotate Frame,0
-05-Applied MOG2,47
-06-Found contours,11
-07-Add Timestamp,4
-01-Start Loop,7
-02-Read Frame,15
-03-Resize Frame,9
-04-Rotate Frame,2
-05-Applied MOG2,28
-06-Found contours,14
+05-Applied MOG2,20
+06-Found contours,4
+07-Add Timestamp,3
+01-Start Loop,3
+02-Read Frame,62
+03-Resize Frame,4
+04-Rotate Frame,0
+05-Applied MOG2,16
+06-Found contours,4
 07-Add Timestamp,2
 01-Start Loop,5
-02-Read Frame,12
-03-Resize Frame,1
-04-Rotate Frame,3
-05-Applied MOG2,22
-06-Found contours,11
+02-Read Frame,16
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,16
+06-Found contours,4
 07-Add Timestamp,2
+01-Start Loop,2
+02-Read Frame,51
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,20
+06-Found contours,9
+07-Add Timestamp,4
 01-Start Loop,4
 02-Read Frame,18
 03-Resize Frame,2
-04-Rotate Frame,0
-05-Applied MOG2,29
-06-Found contours,12
-07-Add Timestamp,3
-01-Start Loop,4
-02-Read Frame,16
-03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,19
-06-Found contours,7
-07-Add Timestamp,2
-01-Start Loop,3
-02-Read Frame,21
-03-Resize Frame,9
 04-Rotate Frame,2
 05-Applied MOG2,18
-06-Found contours,7
-07-Add Timestamp,0
-01-Start Loop,4
-02-Read Frame,11
-03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,18
-06-Found contours,11
-07-Add Timestamp,4
-01-Start Loop,6
-02-Read Frame,26
-03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,22
-06-Found contours,2
-07-Add Timestamp,2
-01-Start Loop,4
-02-Read Frame,19
-03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,35
-06-Found contours,6
-07-Add Timestamp,2
-01-Start Loop,6
-02-Read Frame,14
-03-Resize Frame,4
-04-Rotate Frame,2
-05-Applied MOG2,19
 06-Found contours,4
 07-Add Timestamp,2
 01-Start Loop,4
+02-Read Frame,38
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,18
+06-Found contours,26
+07-Add Timestamp,3
+01-Start Loop,2
+02-Read Frame,18
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,21
+06-Found contours,4
+07-Add Timestamp,2
+01-Start Loop,2
+02-Read Frame,32
+03-Resize Frame,2
+04-Rotate Frame,3
+05-Applied MOG2,14
+06-Found contours,6
+07-Add Timestamp,2
+01-Start Loop,2
+02-Read Frame,16
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,15
+06-Found contours,7
+07-Add Timestamp,0
+01-Start Loop,2
+02-Read Frame,83
+03-Resize Frame,4
+04-Rotate Frame,0
+05-Applied MOG2,21
+06-Found contours,4
+07-Add Timestamp,2
+01-Start Loop,2
+02-Read Frame,20
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,15
+06-Found contours,4
+07-Add Timestamp,3
+08-Check movement,192
+01-Start Loop,5
 02-Read Frame,17
-03-Resize Frame,6
+03-Resize Frame,8
+04-Rotate Frame,7
+05-Applied MOG2,22
+06-Found contours,6
+07-Add Timestamp,2
+08-Check movement,39
+01-Start Loop,8
+02-Read Frame,28
+03-Resize Frame,5
 04-Rotate Frame,4
+05-Applied MOG2,23
+06-Found contours,4
+07-Add Timestamp,4
+08-Check movement,31
+01-Start Loop,11
+02-Read Frame,26
+03-Resize Frame,4
+04-Rotate Frame,2
+05-Applied MOG2,31
+06-Found contours,6
+07-Add Timestamp,2
+08-Check movement,16
+01-Start Loop,2
+02-Read Frame,14
+03-Resize Frame,8
+04-Rotate Frame,4
+05-Applied MOG2,33
+06-Found contours,8
+07-Add Timestamp,4
+08-Check movement,12
+01-Start Loop,2
+02-Read Frame,22
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,24
+06-Found contours,4
+07-Add Timestamp,5
+08-Check movement,14
+01-Start Loop,2
+02-Read Frame,21
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,21
+06-Found contours,8
+07-Add Timestamp,6
+08-Check movement,14
+01-Start Loop,2
+02-Read Frame,17
+03-Resize Frame,4
+04-Rotate Frame,28
+05-Applied MOG2,23
+06-Found contours,7
+07-Add Timestamp,2
+08-Check movement,9
+01-Start Loop,2
+02-Read Frame,26
+03-Resize Frame,5
+04-Rotate Frame,2
+05-Applied MOG2,18
+06-Found contours,6
+07-Add Timestamp,4
+08-Check movement,12
+01-Start Loop,2
+02-Read Frame,12
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,22
+06-Found contours,6
+07-Add Timestamp,4
+08-Check movement,18
+01-Start Loop,4
+02-Read Frame,24
+03-Resize Frame,2
+04-Rotate Frame,0
 05-Applied MOG2,20
 06-Found contours,4
 07-Add Timestamp,2
-08-Check movement,204
-01-Start Loop,6
-02-Read Frame,22
-03-Resize Frame,6
-04-Rotate Frame,5
-05-Applied MOG2,33
-06-Found contours,5
-07-Add Timestamp,3
-08-Check movement,43
-01-Start Loop,4
-02-Read Frame,28
-03-Resize Frame,8
-04-Rotate Frame,3
-05-Applied MOG2,36
-06-Found contours,8
-07-Add Timestamp,6
-08-Check movement,23
-01-Start Loop,6
-02-Read Frame,26
-03-Resize Frame,7
-04-Rotate Frame,6
-05-Applied MOG2,33
-06-Found contours,13
-07-Add Timestamp,5
-08-Check movement,24
-01-Start Loop,6
-02-Read Frame,31
-03-Resize Frame,4
+08-Check movement,8
+01-Start Loop,2
+02-Read Frame,61
+03-Resize Frame,2
 04-Rotate Frame,2
-05-Applied MOG2,30
-06-Found contours,5
-07-Add Timestamp,3
-08-Check movement,33
-01-Start Loop,8
-02-Read Frame,32
-03-Resize Frame,4
-04-Rotate Frame,2
-05-Applied MOG2,28
-06-Found contours,4
-07-Add Timestamp,5
-08-Check movement,36
-01-Start Loop,6
-02-Read Frame,23
-03-Resize Frame,6
-04-Rotate Frame,4
-05-Applied MOG2,29
-06-Found contours,10
-07-Add Timestamp,6
-08-Check movement,11
+05-Applied MOG2,18
+06-Found contours,6
+07-Add Timestamp,2
+08-Check movement,5
 01-Start Loop,2
 02-Read Frame,14
-03-Resize Frame,2
+03-Resize Frame,4
 04-Rotate Frame,0
-05-Applied MOG2,22
-06-Found contours,4
+05-Applied MOG2,20
+06-Found contours,6
 07-Add Timestamp,2
 08-Check movement,6
-01-Start Loop,2
-02-Read Frame,23
-03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,16
-06-Found contours,2
-07-Add Timestamp,3
-08-Check movement,8
-01-Start Loop,2
-02-Read Frame,85
-03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,16
-06-Found contours,4
-07-Add Timestamp,4
-08-Check movement,8
-01-Start Loop,2
-02-Read Frame,17
-03-Resize Frame,6
-04-Rotate Frame,2
-05-Applied MOG2,22
-06-Found contours,4
-07-Add Timestamp,4
-08-Check movement,12
 01-Start Loop,4
-02-Read Frame,16
-03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,22
-06-Found contours,4
-07-Add Timestamp,6
-08-Check movement,19
-01-Start Loop,13
-02-Read Frame,12
-03-Resize Frame,4
-04-Rotate Frame,2
-05-Applied MOG2,16
-06-Found contours,4
-07-Add Timestamp,2
-08-Check movement,4
-01-Start Loop,3
-02-Read Frame,16
+02-Read Frame,40
 03-Resize Frame,2
 04-Rotate Frame,2
 05-Applied MOG2,18
 06-Found contours,4
-07-Add Timestamp,2
-08-Check movement,24
-01-Start Loop,2
-02-Read Frame,11
-03-Resize Frame,2
-04-Rotate Frame,0
-05-Applied MOG2,15
-06-Found contours,5
-07-Add Timestamp,2
-08-Check movement,6
-01-Start Loop,2
-02-Read Frame,24
-03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,14
-06-Found contours,4
-07-Add Timestamp,2
-08-Check movement,6
-01-Start Loop,2
-02-Read Frame,14
-03-Resize Frame,2
-04-Rotate Frame,0
-05-Applied MOG2,15
-06-Found contours,4
-07-Add Timestamp,2
-08-Check movement,9
-01-Start Loop,6
-02-Read Frame,22
-03-Resize Frame,4
-04-Rotate Frame,0
-05-Applied MOG2,23
-06-Found contours,2
-07-Add Timestamp,4
+07-Add Timestamp,3
 08-Check movement,8
-01-Start Loop,2
-02-Read Frame,43
-03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,16
-06-Found contours,4
-07-Add Timestamp,4
-08-Check movement,6
-01-Start Loop,2
-02-Read Frame,14
-03-Resize Frame,2
-04-Rotate Frame,0
-05-Applied MOG2,16
-06-Found contours,6
-07-Add Timestamp,2
-08-Check movement,8
-01-Start Loop,6
-02-Read Frame,13
-03-Resize Frame,2
-04-Rotate Frame,3
-05-Applied MOG2,13
-06-Found contours,6
-07-Add Timestamp,0
-08-Check movement,10
-01-Start Loop,4
-02-Read Frame,84
-03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,16
-06-Found contours,6
-07-Add Timestamp,2
-08-Check movement,6
-01-Start Loop,2
-02-Read Frame,17
-03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,16
-06-Found contours,5
-07-Add Timestamp,6
-08-Check movement,13
-01-Start Loop,2
-02-Read Frame,13
-03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,14
-06-Found contours,5
-07-Add Timestamp,4
-08-Check movement,4
-01-Start Loop,2
-02-Read Frame,42
-03-Resize Frame,2
-04-Rotate Frame,0
-05-Applied MOG2,16
-06-Found contours,4
-07-Add Timestamp,0
-08-Check movement,7
 01-Start Loop,2
 02-Read Frame,16
 03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,14
-06-Found contours,7
-07-Add Timestamp,0
-08-Check movement,6
-01-Start Loop,4
-02-Read Frame,20
-03-Resize Frame,2
 04-Rotate Frame,0
-05-Applied MOG2,12
+05-Applied MOG2,18
+06-Found contours,8
+07-Add Timestamp,2
+08-Check movement,12
+01-Start Loop,4
+02-Read Frame,34
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,18
+06-Found contours,6
+07-Add Timestamp,2
+08-Check movement,6
+01-Start Loop,2
+02-Read Frame,18
+03-Resize Frame,5
+04-Rotate Frame,1
+05-Applied MOG2,15
 06-Found contours,4
 07-Add Timestamp,2
-08-Check movement,7
-01-Start Loop,1
-02-Read Frame,64
+08-Check movement,5
+01-Start Loop,2
+02-Read Frame,55
 03-Resize Frame,2
-04-Rotate Frame,0
+04-Rotate Frame,2
 05-Applied MOG2,12
 06-Found contours,4
 07-Add Timestamp,2
 08-Check movement,8
 01-Start Loop,2
-02-Read Frame,11
-03-Resize Frame,2
-04-Rotate Frame,1
-05-Applied MOG2,12
-06-Found contours,6
-07-Add Timestamp,0
-08-Check movement,6
-01-Start Loop,2
-02-Read Frame,22
-03-Resize Frame,2
-04-Rotate Frame,0
-05-Applied MOG2,11
-06-Found contours,5
-07-Add Timestamp,3
-08-Check movement,2
-01-Start Loop,3
-02-Read Frame,75
-03-Resize Frame,2
-04-Rotate Frame,0
-05-Applied MOG2,12
-06-Found contours,5
-07-Add Timestamp,2
-08-Check movement,5
-01-Start Loop,2
-02-Read Frame,17
+02-Read Frame,16
 03-Resize Frame,2
 04-Rotate Frame,0
 05-Applied MOG2,16
+06-Found contours,4
+07-Add Timestamp,2
+08-Check movement,4
+01-Start Loop,2
+02-Read Frame,54
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,12
+06-Found contours,4
+07-Add Timestamp,1
+08-Check movement,7
+01-Start Loop,0
+02-Read Frame,14
+03-Resize Frame,0
+04-Rotate Frame,2
+05-Applied MOG2,12
+06-Found contours,4
+07-Add Timestamp,0
+08-Check movement,24
+01-Start Loop,2
+02-Read Frame,41
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,12
+06-Found contours,3
+07-Add Timestamp,2
+08-Check movement,28
+01-Start Loop,3
+02-Read Frame,13
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,12
+06-Found contours,4
+07-Add Timestamp,2
+08-Check movement,29
+01-Start Loop,2
+02-Read Frame,16
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,14
+06-Found contours,3
+07-Add Timestamp,0
+08-Check movement,23
+01-Start Loop,4
+02-Read Frame,10
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,12
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,6
+01-Start Loop,2
+02-Read Frame,41
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,12
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,7
+01-Start Loop,2
+02-Read Frame,14
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,16
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,4
+01-Start Loop,2
+02-Read Frame,86
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,14
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,6
+01-Start Loop,4
+02-Read Frame,12
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,12
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,8
+01-Start Loop,0
+02-Read Frame,70
+03-Resize Frame,3
+04-Rotate Frame,0
+05-Applied MOG2,14
+06-Found contours,1
+07-Add Timestamp,2
+08-Check movement,6
+01-Start Loop,2
+02-Read Frame,13
+03-Resize Frame,1
+04-Rotate Frame,3
+05-Applied MOG2,12
+06-Found contours,2
+07-Add Timestamp,1
+08-Check movement,26
+01-Start Loop,3
+02-Read Frame,22
+03-Resize Frame,4
+04-Rotate Frame,0
+05-Applied MOG2,13
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,6
+01-Start Loop,2
+02-Read Frame,9
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,16
+06-Found contours,4
+07-Add Timestamp,0
+08-Check movement,6
+01-Start Loop,2
+02-Read Frame,61
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,12
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,11
+01-Start Loop,3
+02-Read Frame,11
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,15
+06-Found contours,2
+07-Add Timestamp,3
+08-Check movement,5
+01-Start Loop,2
+02-Read Frame,56
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,14
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,4
+01-Start Loop,1
+02-Read Frame,12
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,12
+06-Found contours,3
+07-Add Timestamp,3
+08-Check movement,4
+01-Start Loop,2
+02-Read Frame,65
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,14
+06-Found contours,2
+07-Add Timestamp,3
+08-Check movement,3
+01-Start Loop,2
+02-Read Frame,14
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,12
+06-Found contours,3
+07-Add Timestamp,2
+08-Check movement,20
+01-Start Loop,2
+02-Read Frame,75
+03-Resize Frame,0
+04-Rotate Frame,2
+05-Applied MOG2,10
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,32
+01-Start Loop,14
+02-Read Frame,14
+03-Resize Frame,3
+04-Rotate Frame,1
+05-Applied MOG2,11
 06-Found contours,5
 07-Add Timestamp,2
+08-Check movement,4
+01-Start Loop,2
+02-Read Frame,25
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,12
+06-Found contours,4
+07-Add Timestamp,0
+08-Check movement,24
+01-Start Loop,2
+02-Read Frame,12
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,12
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,34
+01-Start Loop,2
+02-Read Frame,20
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,12
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,17
+01-Start Loop,3
+02-Read Frame,12
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,11
+06-Found contours,4
+07-Add Timestamp,0
+08-Check movement,30
+01-Start Loop,3
+02-Read Frame,21
+03-Resize Frame,0
+04-Rotate Frame,2
+05-Applied MOG2,12
+06-Found contours,4
+07-Add Timestamp,0
+08-Check movement,20
+01-Start Loop,2
+02-Read Frame,13
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,13
+06-Found contours,2
+07-Add Timestamp,0
 08-Check movement,6
 01-Start Loop,2
 02-Read Frame,49
 03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,12
+06-Found contours,2
+07-Add Timestamp,1
+08-Check movement,18
+01-Start Loop,3
+02-Read Frame,14
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,16
+06-Found contours,4
+07-Add Timestamp,2
+08-Check movement,6
+01-Start Loop,0
+02-Read Frame,48
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,11
+06-Found contours,2
+07-Add Timestamp,3
+08-Check movement,8
+01-Start Loop,2
+02-Read Frame,11
+03-Resize Frame,2
 04-Rotate Frame,2
-05-Applied MOG2,14
-06-Found contours,6
+05-Applied MOG2,11
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,32
+01-Start Loop,2
+02-Read Frame,67
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,10
+06-Found contours,5
+07-Add Timestamp,0
+08-Check movement,8
+01-Start Loop,2
+02-Read Frame,13
+03-Resize Frame,0
+04-Rotate Frame,2
+05-Applied MOG2,10
+06-Found contours,2
 07-Add Timestamp,2
 08-Check movement,4
 01-Start Loop,2
-02-Read Frame,14
+02-Read Frame,65
 03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,14
-06-Found contours,6
+04-Rotate Frame,0
+05-Applied MOG2,12
+06-Found contours,2
 07-Add Timestamp,1
+08-Check movement,36
+01-Start Loop,2
+02-Read Frame,12
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,12
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,32
+01-Start Loop,4
+02-Read Frame,8
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,12
+06-Found contours,2
+07-Add Timestamp,4
 08-Check movement,4
 01-Start Loop,2
-02-Read Frame,18
+02-Read Frame,9
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,14
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,25
+01-Start Loop,4
+02-Read Frame,44
 03-Resize Frame,2
 04-Rotate Frame,2
 05-Applied MOG2,10
-06-Found contours,8
+06-Found contours,4
+07-Add Timestamp,0
+08-Check movement,28
+01-Start Loop,3
+02-Read Frame,11
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,10
+06-Found contours,25
+07-Add Timestamp,3
+08-Check movement,12
+01-Start Loop,4
+02-Read Frame,18
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,12
+06-Found contours,4
+07-Add Timestamp,0
+08-Check movement,6
+01-Start Loop,2
+02-Read Frame,10
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,10
+06-Found contours,4
+07-Add Timestamp,2
+08-Check movement,12
+01-Start Loop,2
+02-Read Frame,89
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,11
+06-Found contours,4
+07-Add Timestamp,0
+08-Check movement,17
+01-Start Loop,4
+02-Read Frame,9
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,9
+06-Found contours,4
+07-Add Timestamp,2
+08-Check movement,6
+01-Start Loop,2
+02-Read Frame,50
+03-Resize Frame,0
+04-Rotate Frame,2
+05-Applied MOG2,12
+06-Found contours,2
+07-Add Timestamp,0
+08-Check movement,17
+01-Start Loop,3
+02-Read Frame,7
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,10
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,37
+01-Start Loop,2
+02-Read Frame,30
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,12
+06-Found contours,4
+07-Add Timestamp,0
+08-Check movement,6
+01-Start Loop,2
+02-Read Frame,14
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,12
+06-Found contours,4
+07-Add Timestamp,0
+08-Check movement,32
+01-Start Loop,2
+02-Read Frame,30
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,10
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,11
+01-Start Loop,0
+02-Read Frame,11
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,10
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,36
+01-Start Loop,2
+02-Read Frame,35
+03-Resize Frame,0
+04-Rotate Frame,2
+05-Applied MOG2,10
+06-Found contours,4
+07-Add Timestamp,0
+08-Check movement,8
+01-Start Loop,2
+02-Read Frame,14
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,12
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,6
+01-Start Loop,0
+02-Read Frame,64
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,12
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,32
+01-Start Loop,2
+02-Read Frame,13
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,12
+06-Found contours,4
+07-Add Timestamp,0
+08-Check movement,4
+01-Start Loop,2
+02-Read Frame,75
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,13
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,24
+01-Start Loop,2
+02-Read Frame,11
+03-Resize Frame,4
+04-Rotate Frame,0
+05-Applied MOG2,11
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,33
+01-Start Loop,3
+02-Read Frame,13
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,12
+06-Found contours,2
 07-Add Timestamp,2
 08-Check movement,29
 01-Start Loop,2
-02-Read Frame,43
-03-Resize Frame,2
-04-Rotate Frame,0
-05-Applied MOG2,12
-06-Found contours,8
-07-Add Timestamp,2
-08-Check movement,24
-01-Start Loop,1
-02-Read Frame,46
-03-Resize Frame,2
-04-Rotate Frame,0
-05-Applied MOG2,18
-06-Found contours,12
-07-Add Timestamp,0
-08-Check movement,11
-01-Start Loop,2
-02-Read Frame,14
-03-Resize Frame,2
-04-Rotate Frame,4
-05-Applied MOG2,18
-06-Found contours,13
-07-Add Timestamp,2
-08-Check movement,7
-09-Write CSV,111
-10-Draw Movement Box on JPG,102
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,4
-13-Write Video Frame,27
-01-Start Loop,63
-02-Read Frame,15
-03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,16
-06-Found contours,20
-07-Add Timestamp,3
-08-Check movement,51
-10-Draw Movement Box on JPG,10
-11-Update Graph Frame,0
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,17
-01-Start Loop,4
-02-Read Frame,12
-03-Resize Frame,4
-04-Rotate Frame,2
-05-Applied MOG2,22
-06-Found contours,18
-07-Add Timestamp,4
-08-Check movement,8
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,7
-01-Start Loop,6
-02-Read Frame,12
-03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,18
-06-Found contours,19
-07-Add Timestamp,4
-08-Check movement,16
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,6
-01-Start Loop,2
-02-Read Frame,16
-03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,14
-06-Found contours,11
-07-Add Timestamp,4
-08-Check movement,14
-10-Draw Movement Box on JPG,11
-11-Update Graph Frame,0
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,6
-01-Start Loop,4
-02-Read Frame,12
-03-Resize Frame,2
-04-Rotate Frame,3
-05-Applied MOG2,18
-06-Found contours,9
-07-Add Timestamp,2
-08-Check movement,13
-11-Update Graph Frame,3
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,6
-01-Start Loop,2
-02-Read Frame,17
-03-Resize Frame,4
-04-Rotate Frame,2
-05-Applied MOG2,12
-06-Found contours,10
-07-Add Timestamp,2
-08-Check movement,9
-11-Update Graph Frame,3
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,7
-01-Start Loop,4
-02-Read Frame,24
-03-Resize Frame,4
-04-Rotate Frame,2
-05-Applied MOG2,23
-06-Found contours,9
-07-Add Timestamp,4
-08-Check movement,14
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,8
-01-Start Loop,2
-02-Read Frame,16
-03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,19
-06-Found contours,13
-07-Add Timestamp,0
-08-Check movement,12
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,6
-01-Start Loop,2
 02-Read Frame,8
-03-Resize Frame,5
-04-Rotate Frame,0
-05-Applied MOG2,15
-06-Found contours,11
-07-Add Timestamp,0
-08-Check movement,8
-11-Update Graph Frame,3
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,8
-01-Start Loop,2
-02-Read Frame,14
-03-Resize Frame,6
-04-Rotate Frame,0
-05-Applied MOG2,12
-06-Found contours,10
-07-Add Timestamp,2
-08-Check movement,9
-10-Draw Movement Box on JPG,7
-11-Update Graph Frame,0
-12-Draw Movement Box on MP4,1
-13-Write Video Frame,7
-01-Start Loop,3
-02-Read Frame,9
-03-Resize Frame,2
-04-Rotate Frame,0
-05-Applied MOG2,14
-06-Found contours,11
-07-Add Timestamp,2
-08-Check movement,14
-11-Update Graph Frame,3
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,4
-01-Start Loop,2
-02-Read Frame,11
-03-Resize Frame,2
-04-Rotate Frame,0
-05-Applied MOG2,12
-06-Found contours,12
-07-Add Timestamp,2
-08-Check movement,8
-11-Update Graph Frame,4
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,9
-01-Start Loop,6
-02-Read Frame,20
 03-Resize Frame,2
 04-Rotate Frame,2
-05-Applied MOG2,14
-06-Found contours,12
-07-Add Timestamp,2
-08-Check movement,10
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,0
-13-Write Video Frame,11
-01-Start Loop,2
-02-Read Frame,16
-03-Resize Frame,5
-04-Rotate Frame,0
-05-Applied MOG2,20
-06-Found contours,11
-07-Add Timestamp,2
-08-Check movement,10
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,0
-13-Write Video Frame,6
-01-Start Loop,2
-02-Read Frame,14
-03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,14
-06-Found contours,13
-07-Add Timestamp,0
-08-Check movement,14
-11-Update Graph Frame,4
-12-Draw Movement Box on MP4,0
-13-Write Video Frame,8
-01-Start Loop,2
-02-Read Frame,9
-03-Resize Frame,2
-04-Rotate Frame,0
-05-Applied MOG2,14
-06-Found contours,10
-07-Add Timestamp,2
-08-Check movement,11
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,1
-13-Write Video Frame,6
-01-Start Loop,2
-02-Read Frame,12
-03-Resize Frame,6
-04-Rotate Frame,0
 05-Applied MOG2,12
-06-Found contours,10
+06-Found contours,2
 07-Add Timestamp,2
-08-Check movement,8
-11-Update Graph Frame,3
-12-Draw Movement Box on MP4,0
-13-Write Video Frame,9
-01-Start Loop,1
-02-Read Frame,10
-03-Resize Frame,0
-04-Rotate Frame,2
-05-Applied MOG2,12
-06-Found contours,10
-07-Add Timestamp,2
-08-Check movement,18
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,8
+08-Check movement,31
 01-Start Loop,2
-02-Read Frame,14
-03-Resize Frame,3
-04-Rotate Frame,0
-05-Applied MOG2,15
-06-Found contours,9
-07-Add Timestamp,2
-08-Check movement,12
-11-Update Graph Frame,4
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,39
-01-Start Loop,3
-02-Read Frame,12
+02-Read Frame,18
 03-Resize Frame,4
-04-Rotate Frame,2
-05-Applied MOG2,15
-06-Found contours,13
-07-Add Timestamp,2
-08-Check movement,10
-11-Update Graph Frame,3
-12-Draw Movement Box on MP4,0
-13-Write Video Frame,7
-01-Start Loop,3
-02-Read Frame,13
-03-Resize Frame,3
-04-Rotate Frame,1
-05-Applied MOG2,18
-06-Found contours,15
-07-Add Timestamp,0
-08-Check movement,9
-11-Update Graph Frame,5
-12-Draw Movement Box on MP4,1
-13-Write Video Frame,8
-01-Start Loop,2
-02-Read Frame,13
-03-Resize Frame,2
 04-Rotate Frame,0
-05-Applied MOG2,12
-06-Found contours,12
-07-Add Timestamp,0
-08-Check movement,11
-11-Update Graph Frame,4
-12-Draw Movement Box on MP4,1
-13-Write Video Frame,8
+05-Applied MOG2,10
+06-Found contours,4
+07-Add Timestamp,2
+08-Check movement,23
 01-Start Loop,2
 02-Read Frame,10
 03-Resize Frame,2
 04-Rotate Frame,0
-05-Applied MOG2,14
-06-Found contours,6
+05-Applied MOG2,13
+06-Found contours,2
+07-Add Timestamp,0
+08-Check movement,8
+01-Start Loop,2
+02-Read Frame,44
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,12
+06-Found contours,2
+07-Add Timestamp,0
+08-Check movement,24
+01-Start Loop,2
+02-Read Frame,10
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,10
+06-Found contours,2
 07-Add Timestamp,2
 08-Check movement,7
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,6
-01-Start Loop,2
-02-Read Frame,36
-03-Resize Frame,0
-04-Rotate Frame,2
-05-Applied MOG2,13
-06-Found contours,11
-07-Add Timestamp,2
-08-Check movement,12
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,8
-01-Start Loop,2
-02-Read Frame,46
-03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,16
-06-Found contours,10
-07-Add Timestamp,0
-08-Check movement,11
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,0
-13-Write Video Frame,8
-01-Start Loop,3
-02-Read Frame,37
-03-Resize Frame,2
-04-Rotate Frame,0
-05-Applied MOG2,14
-06-Found contours,8
-07-Add Timestamp,0
-08-Check movement,8
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,4
-01-Start Loop,2
-02-Read Frame,13
-03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,12
-06-Found contours,7
-07-Add Timestamp,3
-08-Check movement,8
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,4
-13-Write Video Frame,8
-01-Start Loop,2
-02-Read Frame,11
-03-Resize Frame,0
-04-Rotate Frame,2
-05-Applied MOG2,14
-06-Found contours,5
-07-Add Timestamp,2
-08-Check movement,9
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,0
-13-Write Video Frame,10
-01-Start Loop,2
-02-Read Frame,33
-03-Resize Frame,2
-04-Rotate Frame,0
-05-Applied MOG2,12
-06-Found contours,7
-07-Add Timestamp,0
-08-Check movement,10
-11-Update Graph Frame,0
-12-Draw Movement Box on MP4,3
-13-Write Video Frame,6
-01-Start Loop,2
-02-Read Frame,12
-03-Resize Frame,2
-04-Rotate Frame,0
-05-Applied MOG2,15
-06-Found contours,9
-07-Add Timestamp,2
-08-Check movement,10
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,0
-13-Write Video Frame,9
-01-Start Loop,4
-02-Read Frame,22
-03-Resize Frame,2
-04-Rotate Frame,0
-05-Applied MOG2,18
-06-Found contours,8
-07-Add Timestamp,2
-08-Check movement,10
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,6
-01-Start Loop,4
-02-Read Frame,16
-03-Resize Frame,2
-04-Rotate Frame,0
-05-Applied MOG2,24
-06-Found contours,8
-07-Add Timestamp,2
-08-Check movement,10
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,6
-01-Start Loop,2
-02-Read Frame,16
-03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,15
-06-Found contours,9
-07-Add Timestamp,1
-08-Check movement,8
-11-Update Graph Frame,7
-12-Draw Movement Box on MP4,3
-13-Write Video Frame,8
-01-Start Loop,2
-02-Read Frame,14
-03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,12
-06-Found contours,6
-07-Add Timestamp,2
-08-Check movement,6
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,4
-01-Start Loop,3
-02-Read Frame,14
-03-Resize Frame,6
-04-Rotate Frame,0
-05-Applied MOG2,12
-06-Found contours,6
-07-Add Timestamp,1
-08-Check movement,8
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,8
-01-Start Loop,2
-02-Read Frame,10
-03-Resize Frame,2
-04-Rotate Frame,1
-05-Applied MOG2,10
-06-Found contours,7
-07-Add Timestamp,0
-08-Check movement,12
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,6
-01-Start Loop,5
-02-Read Frame,14
-03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,14
-06-Found contours,7
-07-Add Timestamp,2
-08-Check movement,9
-11-Update Graph Frame,3
-12-Draw Movement Box on MP4,3
-13-Write Video Frame,7
-01-Start Loop,1
-02-Read Frame,45
-03-Resize Frame,4
-04-Rotate Frame,0
-05-Applied MOG2,14
-06-Found contours,8
-07-Add Timestamp,2
-08-Check movement,10
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,4
-01-Start Loop,2
-02-Read Frame,12
-03-Resize Frame,3
-04-Rotate Frame,2
-05-Applied MOG2,26
-06-Found contours,6
-07-Add Timestamp,0
-08-Check movement,8
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,6
-01-Start Loop,2
-02-Read Frame,12
-03-Resize Frame,2
-04-Rotate Frame,1
-05-Applied MOG2,12
-06-Found contours,4
-07-Add Timestamp,2
-08-Check movement,10
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,0
-13-Write Video Frame,8
-01-Start Loop,2
-02-Read Frame,14
-03-Resize Frame,3
-04-Rotate Frame,0
-05-Applied MOG2,12
-06-Found contours,5
-07-Add Timestamp,0
-08-Check movement,6
-11-Update Graph Frame,4
-12-Draw Movement Box on MP4,0
-13-Write Video Frame,6
-01-Start Loop,2
-02-Read Frame,11
-03-Resize Frame,2
-04-Rotate Frame,0
-05-Applied MOG2,13
-06-Found contours,4
-07-Add Timestamp,2
-08-Check movement,6
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,6
-01-Start Loop,4
-02-Read Frame,36
-03-Resize Frame,2
-04-Rotate Frame,0
-05-Applied MOG2,12
-06-Found contours,4
-07-Add Timestamp,2
-08-Check movement,6
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,6
-01-Start Loop,2
-02-Read Frame,13
-03-Resize Frame,3
-04-Rotate Frame,0
-05-Applied MOG2,16
-06-Found contours,9
-07-Add Timestamp,2
-08-Check movement,17
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,6
-01-Start Loop,2
-02-Read Frame,10
-03-Resize Frame,2
-04-Rotate Frame,0
-05-Applied MOG2,18
-06-Found contours,6
-07-Add Timestamp,0
-08-Check movement,9
-11-Update Graph Frame,4
-12-Draw Movement Box on MP4,0
-13-Write Video Frame,10
-01-Start Loop,1
-02-Read Frame,26
-03-Resize Frame,2
-04-Rotate Frame,3
-05-Applied MOG2,14
-06-Found contours,8
-07-Add Timestamp,2
-08-Check movement,9
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,0
-13-Write Video Frame,9
-01-Start Loop,3
-02-Read Frame,17
-03-Resize Frame,2
-04-Rotate Frame,0
-05-Applied MOG2,16
-06-Found contours,10
-07-Add Timestamp,0
-08-Check movement,8
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,6
-01-Start Loop,2
-02-Read Frame,11
-03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,14
-06-Found contours,7
-07-Add Timestamp,0
-08-Check movement,10
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,7
-01-Start Loop,3
-02-Read Frame,10
-03-Resize Frame,4
-04-Rotate Frame,0
-05-Applied MOG2,12
-06-Found contours,6
-07-Add Timestamp,2
-08-Check movement,8
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,0
-13-Write Video Frame,8
-01-Start Loop,2
+01-Start Loop,0
 02-Read Frame,53
 03-Resize Frame,2
-04-Rotate Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,12
+06-Found contours,4
+07-Add Timestamp,0
+08-Check movement,16
+01-Start Loop,1
+02-Read Frame,11
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,10
+06-Found contours,4
+07-Add Timestamp,0
+08-Check movement,34
+01-Start Loop,3
+02-Read Frame,31
+03-Resize Frame,2
+04-Rotate Frame,0
 05-Applied MOG2,13
-06-Found contours,7
+06-Found contours,1
 07-Add Timestamp,2
-08-Check movement,8
-11-Update Graph Frame,4
-12-Draw Movement Box on MP4,0
-13-Write Video Frame,7
+08-Check movement,10
 01-Start Loop,2
-02-Read Frame,17
-03-Resize Frame,4
+02-Read Frame,14
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,10
+06-Found contours,2
+07-Add Timestamp,3
+08-Check movement,6
+01-Start Loop,2
+02-Read Frame,92
+03-Resize Frame,0
 04-Rotate Frame,2
-05-Applied MOG2,27
-06-Found contours,13
+05-Applied MOG2,11
+06-Found contours,2
+07-Add Timestamp,0
+08-Check movement,7
+01-Start Loop,0
+02-Read Frame,11
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,12
+06-Found contours,4
+07-Add Timestamp,0
+08-Check movement,31
+01-Start Loop,4
+02-Read Frame,39
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,12
+06-Found contours,2
 07-Add Timestamp,2
-08-Check movement,12
-11-Update Graph Frame,3
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,7
+08-Check movement,31
+01-Start Loop,2
+02-Read Frame,11
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,10
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,34
+01-Start Loop,8
+02-Read Frame,10
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,12
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,24
 01-Start Loop,2
 02-Read Frame,12
 03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,11
+06-Found contours,4
+07-Add Timestamp,0
+08-Check movement,29
+01-Start Loop,2
+02-Read Frame,18
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,12
+06-Found contours,4
+07-Add Timestamp,0
+08-Check movement,22
+01-Start Loop,2
+02-Read Frame,14
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,12
+06-Found contours,4
+07-Add Timestamp,0
+08-Check movement,4
+01-Start Loop,3
+02-Read Frame,47
+03-Resize Frame,2
 04-Rotate Frame,2
-05-Applied MOG2,16
-06-Found contours,10
+05-Applied MOG2,13
+06-Found contours,2
 07-Add Timestamp,2
-08-Check movement,12
-11-Update Graph Frame,4
-12-Draw Movement Box on MP4,0
-13-Write Video Frame,6
+08-Check movement,7
+01-Start Loop,2
+02-Read Frame,10
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,10
+06-Found contours,4
+07-Add Timestamp,0
+08-Check movement,10
+01-Start Loop,2
+02-Read Frame,63
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,12
+06-Found contours,2
+07-Add Timestamp,0
+08-Check movement,9
+01-Start Loop,2
+02-Read Frame,11
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,12
+06-Found contours,2
+07-Add Timestamp,0
+08-Check movement,33
+01-Start Loop,2
+02-Read Frame,69
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,11
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,4
+01-Start Loop,3
+02-Read Frame,12
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,12
+06-Found contours,2
+07-Add Timestamp,0
+08-Check movement,6
+01-Start Loop,2
+02-Read Frame,61
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,12
+06-Found contours,4
+07-Add Timestamp,0
+08-Check movement,6
+01-Start Loop,0
+02-Read Frame,14
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,12
+06-Found contours,4
+07-Add Timestamp,0
+08-Check movement,32
+01-Start Loop,3
+02-Read Frame,41
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,14
+06-Found contours,3
+07-Add Timestamp,0
+08-Check movement,28
+01-Start Loop,2
+02-Read Frame,13
+03-Resize Frame,2
+04-Rotate Frame,0
+05-Applied MOG2,12
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,31
 01-Start Loop,2
 02-Read Frame,12
 03-Resize Frame,2
 04-Rotate Frame,0
 05-Applied MOG2,14
-06-Found contours,8
-07-Add Timestamp,3
+06-Found contours,2
+07-Add Timestamp,0
 08-Check movement,7
-11-Update Graph Frame,2
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,6
+01-Start Loop,0
+02-Read Frame,14
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,12
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,5
 01-Start Loop,1
-02-Read Frame,15
+02-Read Frame,66
 03-Resize Frame,2
 04-Rotate Frame,2
-05-Applied MOG2,14
-06-Found contours,7
-07-Add Timestamp,2
-08-Check movement,10
-11-Update Graph Frame,4
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,6
-01-Start Loop,2
-02-Read Frame,11
-03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,12
-06-Found contours,8
-07-Add Timestamp,2
-08-Check movement,8
+05-Applied MOG2,10
+06-Found contours,4
+07-Add Timestamp,0
+08-Check movement,23
+09-Write CSV,15
+10-Draw Movement Box on JPG,12
 11-Update Graph Frame,2
-12-Draw Movement Box on MP4,2
-13-Write Video Frame,6
-01-Start Loop,2
-02-Read Frame,16
-03-Resize Frame,2
-04-Rotate Frame,2
-05-Applied MOG2,12
-06-Found contours,6
-07-Add Timestamp,2
-08-Check movement,8
-11-Update Graph Frame,0
-12-Draw Movement Box on MP4,2
+12-Draw Movement Box on MP4,0
+13-Write Video Frame,8
+01-Start Loop,49
+02-Read Frame,21
+03-Resize Frame,8
+04-Rotate Frame,4
+05-Applied MOG2,17
+06-Found contours,4
+07-Add Timestamp,0
+08-Check movement,16
+11-Update Graph Frame,2
+12-Draw Movement Box on MP4,0
 13-Write Video Frame,8
 01-Start Loop,2
-02-Read Frame,11
+02-Read Frame,10
 03-Resize Frame,2
-04-Rotate Frame,3
+04-Rotate Frame,2
+05-Applied MOG2,15
+06-Found contours,3
+07-Add Timestamp,2
+08-Check movement,12
+11-Update Graph Frame,4
+12-Draw Movement Box on MP4,4
+13-Write Video Frame,13
+01-Start Loop,4
+02-Read Frame,13
+03-Resize Frame,2
+04-Rotate Frame,0
 05-Applied MOG2,12
-06-Found contours,11
+06-Found contours,4
+07-Add Timestamp,0
+08-Check movement,10
+11-Update Graph Frame,3
+12-Draw Movement Box on MP4,3
+13-Write Video Frame,6
+01-Start Loop,4
+02-Read Frame,10
+03-Resize Frame,4
+04-Rotate Frame,0
+05-Applied MOG2,15
+06-Found contours,4
+07-Add Timestamp,0
+08-Check movement,8
+11-Update Graph Frame,2
+12-Draw Movement Box on MP4,2
+13-Write Video Frame,9
+01-Start Loop,2
+02-Read Frame,18
+03-Resize Frame,6
+04-Rotate Frame,2
+05-Applied MOG2,16
+06-Found contours,2
+07-Add Timestamp,0
+08-Check movement,8
+11-Update Graph Frame,2
+12-Draw Movement Box on MP4,2
+13-Write Video Frame,6
+01-Start Loop,4
+02-Read Frame,8
+03-Resize Frame,4
+04-Rotate Frame,0
+05-Applied MOG2,14
+06-Found contours,4
+07-Add Timestamp,2
+08-Check movement,8
+09-Write CSV,11
+10-Draw Movement Box on JPG,2
+11-Update Graph Frame,0
+12-Draw Movement Box on MP4,2
+13-Write Video Frame,10
+01-Start Loop,4
+02-Read Frame,17
+03-Resize Frame,2
+04-Rotate Frame,2
+05-Applied MOG2,12
+06-Found contours,2
+07-Add Timestamp,2
+08-Check movement,9
+11-Update Graph Frame,2
+12-Draw Movement Box on MP4,2
+13-Write Video Frame,6
+01-Start Loop,4
+02-Read Frame,8
