@@ -65,10 +65,11 @@ v3.16   09/03/2023 Include camera controls.
 v3.17   09/04/2023 Include visits csv.
 v3.18   27/04/2023 Include settings in the visits.csv file.
 v3.19   17/12/2023 Add Version class and MovementCSV class.
+v3.20   17/11/2023 Major amendment to use of movement buffers to use advance motion triggering.
 """
 __author__ = "Peter Goodgame"
 __name__ = "motion"
-__version__ = "v3.19b"
+__version__ = "v3.20b"
 
 import argparse
 import collections
@@ -491,6 +492,7 @@ class Version:
         fp.close()
         return self.get_version()
 
+
 class MovementCSV:
     def __init__(self, debug=False, interval=60):
         self.debug = debug
@@ -568,6 +570,7 @@ class MovementCSV:
     """
     Call this for every frame read that is read.
     """
+
     def log_level(self,
                   ll_movement_level,
                   ll_movement_level_average,
@@ -575,7 +578,8 @@ class MovementCSV:
                   ll_variable_trigger_point_base):
         if self.debug:
             print('CSV:log_level')
-        print(f'CSV:log_level- movement_level:{ll_movement_level} movement_level_average:{ll_movement_level_average} variable_trigger_point:{ll_variable_trigger_point} variable_trigger_point_base:{ll_variable_trigger_point_base}')
+        # print(
+        #     f'CSV:log_level- movement_level:{ll_movement_level} movement_level_average:{ll_movement_level_average} variable_trigger_point:{ll_variable_trigger_point} variable_trigger_point_base:{ll_variable_trigger_point_base}')
         if not os.path.isfile(self.csv_file):
             self.create()
         if ll_movement_level > 0:
@@ -710,6 +714,7 @@ class MovementCSV:
         # df['Highest Peak'] = self.movement_highest
 
         df.to_csv(filename, index_label='Frame')
+
 
 class MP4:
 
@@ -855,7 +860,7 @@ def add_statistics(ps_frame):
 Frame rates: Record: {image_record_fps} Playback: {image_playback_fps}\n\
 Exposure: {exp_time}, Gain: {ana_gain}\n\
 Trigger Point: {trigger_point} Base  {trigger_point_base} \n\
-Average Window {movement_history_window} Delay {movement_history_age} Frame Cnt {movement_frame_count}\n\
+Average Window {movement_window} Delay {movement_window_age} Frame Cnt {movement_frame_count}\n\
 MOG2 Subtraction Threshold: {subtraction_threshold}\n\
 MOG2 Subtraction History: {subtraction_history}\n\
 Total Frames: {frames_written}\n\
@@ -921,7 +926,7 @@ def add_box(ab_frame, ab_area, ab_label, ab_color, ab_thickness=1, ab_fontsize=1
     y = ab_area[1]
     w = ab_area[2]
     h = ab_area[3]
-    cv2.rectangle(ab_frame, (x, y), (x + w, y + h), ab_color, ab_thickness)
+    cv2.rectangle(ab_frame, (x, y), (x + w, y + h), ab_color, 1)
     cv2.putText(ab_frame, ab_label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, ab_fontsize, ab_color, ab_thickness)
     return ab_frame
 
@@ -998,71 +1003,6 @@ def check_frame_count():
         consecutive_movement_frame_cnt += 1
         return False
 
-"""
-Get the average movement over the number of frames in 
-the average window. 
-Returns the average movement and True if the average is
-based on a full populated set of numbers."""
-def movement_get_mean_level(_average_window, _average_delay):
-    global average_window_cnt
-    _average_window_full = False
-    _average_window = _average_window + _average_delay
-    if _average_window < average_window_cnt:
-        average_window_cnt += 1
-    else:
-        _average_window_full = True
-    _average_window = _average_window * (-1)
-    _average_delay = _average_delay * (-1)
-    _total_movement = 0
-    for _movement in buffered_movement[_average_window:_average_delay]:
-        print(f'Movement in array: {_movement}')
-        _total_movement += _movement
-    print(f'Total movement: {_total_movement}')
-    print(f'Average: {int(_total_movement / _average_window)}')
-    return _average_window_full, int(_total_movement / _average_window)
-
-
-
-
-
-def check_movement(_m_level, _movement_flag):
-    """
-    Check for movement.
-    compare the movement level + average level from the average n frames ago.
-    """
-    global consecutive_movement_frame_cnt
-    _movement_ended = None
-    _movement_level_average_initialised, _movement_level_average = movement_get_mean_level(movement_history_window, movement_history_age)
-    _variable_trigger_point_base = 0
-    _variable_trigger_point = 0
-    _movement_triggered = False
-    if _movement_flag and _movement_level_average_initialised:
-        # if _m_level < trigger_point:
-        #     consecutive_movement_frame_cnt = 0
-        _variable_trigger_point = _movement_level_average + trigger_point
-        _variable_trigger_point_base = _movement_level_average + trigger_point_base
-        if _m_level < _variable_trigger_point_base:
-            _movement_flag = False
-            _movement_ended = True
-            consecutive_movement_frame_cnt = 0
-    else:
-        _variable_trigger_point = _movement_level_average + trigger_point
-        _variable_trigger_point_base = _movement_level_average + trigger_point_base
-        if _m_level > _variable_trigger_point:
-            # Check the number of consecutive that contain movement.
-            if check_frame_count():
-                _movement_flag = True
-                _movement_ended = False
-                _movement_triggered = True
-
-    return (_movement_triggered,
-            _movement_flag,
-            _movement_ended,
-            _m_level,
-            _movement_level_average,
-            _variable_trigger_point,
-            _variable_trigger_point_base)
-
 
 def zoom(img, zoom_factor=1.5):
     y_size = img.shape[0]
@@ -1101,6 +1041,7 @@ def get_exposure():
 def debug_size(_image):
     if debug:
         print(f'Image size is {_image.shape}')
+
 
 """
 Start Program
@@ -1175,8 +1116,8 @@ if __name__ == "motion":
     main_height = int(get_parameter(parser, 'main_height', '720'))
     main_width = int(get_parameter(parser, 'main_width', '1280'))
     mask_path = get_parameter(parser, 'mask_path', 'off')
-    movement_history_window = int(get_parameter(parser, 'movement_history_window', '0'))
-    movement_history_age = int(get_parameter(parser, 'movement_history_age', '0'))
+    movement_window = int(get_parameter(parser, 'movement_window', '0'))
+    movement_window_age = int(get_parameter(parser, 'movement_window_age', '0'))
     movement_frame_count = int(get_parameter(parser, 'movement_frame_count', '0'))
     output_dir = get_parameter(parser, 'output_dir', 'Motion')
     post_frames = int(get_parameter(parser, 'post_frames', '1'))
@@ -1199,10 +1140,11 @@ if __name__ == "motion":
     zoom_factor = float(get_parameter(parser, 'zoom_factor', 0))
 
     # Instantiate movementCSV file writing.
+    mcsv = None
     if csv_output:
         mcsv = MovementCSV()
         mcsv.update_parameters(trigger_point, trigger_point_base, trigger_point_frames, subtraction_threshold,
-                               subtraction_history, movement_history_window, movement_history_age)
+                               subtraction_history, movement_window, movement_window_age)
 
     # Instantiate visits log.
     if csv_visits_log:
@@ -1295,13 +1237,12 @@ if __name__ == "motion":
     buffer = np.zeros((pre_frames, lores_height, lores_width, 3), np.dtype('uint8'))
     buffered_frame = np.zeros((1, lores_height, lores_width, 3), np.dtype('uint8'))
     buffered_bounding_rect = np.zeros((pre_frames, 4), np.dtype('uint16'))
-    buffered_movement = np.zeros((pre_frames, 1), np.dtype('uint16'))
-
+    # buffered_movement = np.zeros((pre_frames, 1), np.dtype('uint16'))
+    buffered_movement = np.array([])
     jpg_frame = np.zeros((1, lores_height, lores_width, 3), np.dtype('uint8'))
     timelapse_frame = np.zeros((1, lores_height, lores_width, 3), np.dtype('uint8'))
     yolo_frame = np.zeros((1, main_height, main_width, 3), np.dtype('uint8'))
     yolo_peak_movement_frame = np.zeros((1, main_height, main_width, 3), np.dtype('uint8'))
-
     log.info('Camera started')
 
     # Instantiate mp4 output.
@@ -1313,7 +1254,9 @@ if __name__ == "motion":
     log.info('PID: {}'.format(os.getpid()))
     # Read images and process them.
     jpg_contour = 0
+    movement_level = 0  # Movement level.
     movement_flag = False  # Set to true is movement is detected.
+    movement_triggered = False  # Set only when processing the frame that triggered movement.
     movement_ended = False  # Set when movement ends.
     movement_frame_cnt = 0  # Number of frames since movement was detected.
     movement_total = 0  # Total contour count for consecutive frames.
@@ -1323,7 +1266,7 @@ if __name__ == "motion":
     resize = False
     stabilised = False
     signal_frame_cnt = 0
-    average_window_cnt = 0 # Used to ensure all stored frame values are populated.
+    average_window_cnt = 0  # Used to ensure all stored frame values are populated.
 
     # Instantiate timings.
     tcsv = timingsCSV(enabled=csv_timings, grace=subtraction_history)
@@ -1390,11 +1333,15 @@ if __name__ == "motion":
         if len(contours) > 1:
             c = max(contours, key=cv2.contourArea)
             x, y, w, h = cv2.boundingRect(c)
-            buffered_movement[index] = len(contours)
             buffered_bounding_rect[index] = (x, y, w, h)
+            # Append the values to the array then drop the obsolete values.
+            movement_level = len(contours)
+            buffered_movement = np.append(buffered_movement, movement_level)
         else:
-            buffered_movement[index] = 0
+            buffered_movement = np.append(buffered_movement, 0)
             buffered_bounding_rect[index] = (0, 0, 0, 0)
+
+        buffered_movement = buffered_movement[(movement_window + movement_window_age + 1) * -1::]
 
         # Display the live feed.
         if display:
@@ -1407,25 +1354,44 @@ if __name__ == "motion":
             display_frame = resize_img(buffer[index], (display_image_width, display_image_height))
             cv2.imshow('Live Data', display_frame)
 
-        # Check for movement based in the trigger levels.
-        (movement_triggered,
-         movement_flag,
-         movement_ended,
-         movement_level,
-         movement_level_average,
-         variable_trigger_point,
-         variable_trigger_point_base) = check_movement(
-            int(buffered_movement[index]), movement_flag)
-        # buffered_movement[index] = movement_level
+        # Get the average movement over the movement window using movement_window_age.
+        mean_movement = round(np.mean(buffered_movement[:(movement_window + movement_window_age + 1)]))
+        mean_trigger_point = mean_movement + trigger_point
+        mean_trigger_point_base = mean_movement + trigger_point_base
+
+        # Check for movement. Compare the mean movement level with this movement level.
+        if movement_window_age > 0:
+            if movement_flag:
+                movement_triggered = False
+                movement_ended = True
+                if movement_level < mean_trigger_point_base:
+                    movement_flag = False
+                    movement_ended = True
+            else:
+                if movement_level > mean_trigger_point:
+                    movement_flag = True
+                    movement_triggered = True
+        else:
+            if movement_flag:
+                movement_triggered = False
+                movement_ended = True
+                if movement_level < trigger_point_base:
+                    movement_flag = False
+                    movement_ended = True
+            else:
+                if movement_level > trigger_point:
+                    movement_flag = True
+                    movement_triggered = True
+
         tcsv.log_point('Check movement')
 
         # Send the motion level to the CSV class.
         if csv_output:
             # mcsv.log_level(movement_level,0,0,0)
             mcsv.log_level(movement_level,
-                           movement_level_average,
-                           variable_trigger_point,
-                           variable_trigger_point_base)
+                           mean_movement,
+                           mean_trigger_point,
+                           mean_trigger_point_base)
 
         if movement_triggered:
             mp4.new_filename(version)
@@ -1472,12 +1438,8 @@ if __name__ == "motion":
                 recording_flag = graph.put_stop_icon()
 
         if frames_required > 0:
-            # Get the frame with the highest movement for the JPG file.
-            # if movement_peak < movement_level:
-            #     movement_peak = movement_level
-            #     movement_peak_frame = frames_written + pre_frames
-            if movement_peak < int(buffered_movement[index]):
-                movement_peak = int(buffered_movement[index])
+            if movement_peak < int(buffered_movement[-1::]):
+                movement_peak = int(buffered_movement[-1::])
                 movement_peak_frame = frames_written + pre_frames
                 jpg_frame = np.copy(buffer[index])
                 # Save YOLO frame.
@@ -1494,7 +1456,7 @@ if __name__ == "motion":
                         tcsv.log_point('Draw Movement Box on JPG')
 
             # Write Graph.
-            graph.update_frame(int(buffered_movement[index]))
+            graph.update_frame(int(buffered_movement[-1::]))
             tcsv.log_point('Update Graph Frame')
 
             # Draw graph
@@ -1512,11 +1474,11 @@ if __name__ == "motion":
                                          display_roi_thickness, display_roi_font_size)
 
             # Draw a box around the area of movement on MP4.
-            if not box == 'OFF' and buffered_movement[index] > 1:
-                if buffered_movement[index]:
-                    # x, y, w, h = buffer_bounding_rect[index]
-                    box_text = box.replace('<value>', str(buffered_movement[index]))
-                    buffer[index] = add_box(buffer[index], buffered_bounding_rect[index],
+            if not box == 'OFF' and buffered_movement[-1::] > 1:
+                if buffered_movement[-1::]:
+                    x, y, w, h = buffered_bounding_rect[index]
+                    box_text = box.replace('<value>', str(buffered_movement[-1::]))
+                    buffer[index] = add_box(buffer[index], (x, y, w, h),
                                             box_text, box_rgb, box_thickness, box_font_size)
                     tcsv.log_point('Draw Movement Box on MP4')
 
