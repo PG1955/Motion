@@ -1,5 +1,6 @@
 import libcamera
 import cv2
+from os.path import exists
 
 
 class SensorFormat:
@@ -38,9 +39,9 @@ class Picamera2:
         pass
         # self._lock.release()
 
-    def create_video_configuration(self, main={}, lores=None, raw=None, transform=libcamera.Transform(),
-                                   colour_space=None, buffer_count=6, controls={}, display="main",
-                                   encode="main") -> dict:
+    def create_video_configuration(self, main: object = {}, lores: object = None, raw: object = None, transform: object = libcamera.Transform(),
+                                   colour_space: object = None, buffer_count: object = 6, controls: object = {}, display: object = "main",
+                                   encode: object = "main") -> dict:
         """Make a configuration suitable for video recording."""
         if self.camera is None:
             raise RuntimeError("Camera not opened")
@@ -112,7 +113,10 @@ class Picamera2:
 
     def start(self) -> None:
         if self.capture is None:
-            self.capture = cv2.VideoCapture(0)
+            if exists('test.mp4'):
+                self.capture = cv2.VideoCapture('test.mp4')
+            else:
+                self.capture = cv2.VideoCapture(0)
 
     def capture_array_(self, name) -> bool:
         _, image = self.capture.read()
@@ -141,7 +145,10 @@ class Picamera2:
 
     def configure(self, config):
         self.camera_config = config
-        self.capture = cv2.VideoCapture(0)
+        if exists('test.mp4'):
+            self.capture = cv2.VideoCapture('test.mp4')
+        else:
+            self.capture = cv2.VideoCapture(0)
         self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
         self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
         return self.capture

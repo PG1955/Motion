@@ -12,7 +12,7 @@ v1.16   20/02/2022  Add report motion average peak.
 v1.17   23/02/2022  Add recording_trigger logic. Tidy stats and include exposure.
 v1.18   23/02/2022  Add a graph panel thanks to Rune.
 v1.19   25/02/2022  Coloured graph with scaling,
-v1.20   26/02.2022  Caluculate scalling factor. Rename sensitivity_level trigger_point.
+v1.20   26/02.2022  Calculate scale factor. Rename sensitivity_level trigger_point.
 v1.21   27/02/2022  Rotate image 180.
 v1.22   01/03/2022  Add peak movement information to statistics.
 v1.23   05/03/2022  Take jpg from at the point of peak movement.
@@ -64,11 +64,13 @@ v3.15   07/03/2023 Revisit Graph.
 v3.16   09/03/2023 Include camera controls.
 v3.17   09/04/2023 Include visits csv.
 v3.18   27/04/2023 Include settings in the visits.csv file.
-v3.19   17/12/2023 Add Version class and MovementCSV class.
+v3.19   04/11/2023 Trigger movement if trigger_point is exceeded for trigger_point_frames.
+v3.20   14/11/2023 Advanced movement detection to ignore movement caused by rain.
+v3.21   05/11/2023 Add output of a csv to analyse trigger values.
 """
 __author__ = "Peter Goodgame"
 __name__ = "motion"
-__version__ = "v3.19b"
+__version__ = "v3.21b"
 
 import argparse
 import collections
@@ -77,6 +79,7 @@ import csv
 import logging
 import math
 import os
+# import datetime
 import signal
 import subprocess
 import sys
@@ -85,9 +88,8 @@ from datetime import datetime
 from pathlib import Path
 import cv2
 import numpy as np
-from Journal import journal
-from MotionMP4 import MotionMP4
 import pandas as pd
+from Journal import journal
 from picamera2 import Picamera2
 from libcamera import controls
 from visitsCSV import VisitsCSV
@@ -462,35 +464,6 @@ class FPS:
             return 0.0
 
 
-class Version:
-    def __init__(self):
-        """
-        This class handles the output version numbering.
-        """
-        self.vparse = configparser.ConfigParser()
-        self.vparse.read('version.ini')
-        self.version = int(self.vparse.get('MP4', 'version'))
-
-    def get_version(self):
-        """
-        Gets the current version number.
-        """
-        self.version += 1
-        return self.version
-
-    def write_version(self):
-        """
-        Updates the version number and returns the next number.
-        """
-        # Update ini file.
-        self.vparse = configparser.ConfigParser()
-        self.vparse.read('version.ini')
-        self.vparse.set('MP4', 'version', str(self.get_version()))
-        fp = open('version.ini', 'w')
-        self.vparse.write(fp)
-        fp.close()
-        return self.get_version()
-
 class MovementCSV:
     def __init__(self, debug=False, interval=60):
         self.debug = debug
@@ -711,6 +684,7 @@ class MovementCSV:
 
         df.to_csv(filename, index_label='Frame')
 
+
 class MP4:
 
     def __init__(self, path, mp4_size, mp4_frame_rate):
@@ -759,7 +733,29 @@ class MP4:
         return self.filepath
 
 
-# End Classes
+class Version:
+    def __init__(self):
+        # Read the version ini file.
+        self.vparse = configparser.ConfigParser()
+        self.vparse.read('version.ini')
+        self.version = int(self.vparse.get('MP4', 'version'))
+
+    def get_version(self):
+        return self.version
+
+    def update_version(self):
+        self.version += 1
+        self.write_version()
+        return self.version
+
+    def write_version(self):
+        # Update ini file.
+        self.vparse = configparser.ConfigParser()
+        self.vparse.read('version.ini')
+        self.vparse.set('MP4', 'version', str(self.get_version()))
+        fp = open('version.ini', 'w')
+        self.vparse.write(fp)
+        return fp.close()
 
 
 # =============================================
@@ -767,6 +763,7 @@ class MP4:
 # =============================================
 global trigger_point
 global trigger_point_base
+global consecutive_movement_frame_cnt
 
 
 def readConfiguration(signalNumber, frame):
@@ -1022,14 +1019,13 @@ def movement_get_mean_level(_average_window, _average_delay):
     return _average_window_full, int(_total_movement / _average_window)
 
 
-
+"""
+Check for movement.
+compare the movement level + average level from the average n frames ago.
+"""
 
 
 def check_movement(_m_level, _movement_flag):
-    """
-    Check for movement.
-    compare the movement level + average level from the average n frames ago.
-    """
     global consecutive_movement_frame_cnt
     _movement_ended = None
     _movement_level_average_initialised, _movement_level_average = movement_get_mean_level(movement_history_window, movement_history_age)
@@ -1113,8 +1109,11 @@ if __name__ == "motion":
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--debug', action='store_true', help='Debug enabled')
     parser.add_argument('-s', '--signal', type=int, default=0, help='fire sigusr at frame number')
+    parser.add_argument('--file', default=False, help='Specify an input video for testing.')
 
     args = parser.parse_args()
+    testFile = args.file
+
     # get an instance of the logger object this module will use
     log = get_logger()
 
@@ -1208,12 +1207,9 @@ if __name__ == "motion":
     if csv_visits_log:
         visits = VisitsCSV()
 
-    # Read the version ini file.
-    version_class = Version()
-    version = version_class.get_version()
-    # parser = configparser.ConfigParser()
-    # parser.read('version.ini')
-    # version = int(parser.get('MP4', 'version'))
+    # Instantiate version control & get next version number,
+    output_version = Version()
+    version = output_version.get_version()
 
     # Enable a graph.
     graph = Graph(lores_width, lores_height, 10, trigger_point_base, trigger_point)
@@ -1421,11 +1417,11 @@ if __name__ == "motion":
 
         # Send the motion level to the CSV class.
         if csv_output:
-            # mcsv.log_level(movement_level,0,0,0)
-            mcsv.log_level(movement_level,
-                           movement_level_average,
-                           variable_trigger_point,
-                           variable_trigger_point_base)
+            mcsv.log_level(movement_level,0,0,0)
+            # mcsv.log_level(movement_level,
+            #                movement_level_average,
+            #                variable_trigger_point,
+            #                variable_trigger_point_base)
 
         if movement_triggered:
             mp4.new_filename(version)
@@ -1552,8 +1548,8 @@ if __name__ == "motion":
                 write_jpg(jpg_frame)
                 tcsv.log_point('Write JPEG')
 
-                # Update the version number ini file and get the next number.
-                version = version_class.write_version()
+                # Update the version number and write the version ini file.
+                version = output_version.update_version()
 
                 # Run the command to copy over the mp4 file.
                 if not command == "None":
@@ -1590,7 +1586,7 @@ if __name__ == "motion":
     if display:
         cv2.destroyAllWindows()
 
-    # Update ini file.
+    # # Update ini file.
     # parser = configparser.ConfigParser()
     # parser.read('version.ini')
     # parser.set('MP4', 'version', str(mp4.get_version()))

@@ -2,6 +2,7 @@ import os
 import datetime
 import cv2
 
+# Phasing out with version v3.21b of motion.
 
 def main():
     mp4 = MotionMP4('Motion')

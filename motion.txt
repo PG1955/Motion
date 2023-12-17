@@ -1,0 +1,18 @@
+Advanced motion detection to stop background noise such as rain.
+
+Parameters:
+trigger_point = 300 # Level at which movement is detected.
+trigger_point_base = 200 # Level at which movement is seen to cease.
+movement_history_window = 10 # This is the number of past movements that are used to produce a mean movement level.
+6,7,4,8,3,6,10,6,7,4,3 = 64/6.4 = 6
+
+movement_history_age = 10 # Compare the average movement level against movement level 10 frames ago.
+movement_frame_count = 7 # Number of consecutive frames where movement level is detected before triggering the recording.
+
+
+Stop the rain:
+Rain drops cause a peak in movement that spans around two frames so to elevate the peak get an average movement level.
+If heavy rain comes the average can climb to a higher level that the trigger point.  So the combat this add the current
+average movement level is added to the trigger point creating a variable trigger point. To trigger movement in this scenario
+a movement_history_age has to be introduced to compare the average movement with the movement average movement_history_age ago.
+

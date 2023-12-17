@@ -5,10 +5,16 @@ import csv
 
 """
 MovementsCSV class.
-
 Writes a CSV file containing peak movements CSV file.
+
+Version Date        Description
+v1.10   16/11/2023  Add a new column for v3.20 of motion.
+Phasing out with version v3.21b of motion.
 """
 
+__author__ = "Peter Goodgame"
+__name__ = "movementCSV"
+__version__ = "v1.10"
 
 class MovementCSV:
     def __init__(self, debug=False, interval=60):
@@ -22,18 +28,30 @@ class MovementCSV:
         self.motion_highest = 0  # Maximum movement in the reporting period.
         self.movement_level = 0  # Current Movement level.
         self.movement_highest = 0  # Maximum movement in the reporting period.
-        self.movement_average = 0  # Average movement,
+        self.movement_average = 0  # Average movement based on mean movement.
         self.movement_total = 0  # Total movement
         self.movement_cnt = 0  # Number of frames.
         self.trigger_highest = 0  # value that triggered movement.
         self.trigger_point_base = 0  # value at which recording stops.
+        self.movement_history_window = 0 # Number of past frames to Calculate the average movement level.
+        self.movement_history_age = 0 # Number of frames gap between the movement history frames and the current one.
+        self.variable_trigger_point = 0 # Variable trigger point = movement_average + trigger point
         self.last_write_time = datetime.now()  # Last write time.
         self.now = datetime.now()
         self.csv_file = "peakMovement.csv"
-        self.columns = ['Timestamp', 'Trigger Point', 'Trigger Point Base',
-                        'Trigger Point Frames',
-                        'Subtraction Threshold', 'Subtraction History', 'Average',
-                        'Highest Peak', 'Trigger Value']
+        self.columns = ['Timestamp',
+                        'Trigger Point',
+                        'Trigger Point Base',
+                        'Movement History Window',
+                        'Movement History Age',
+                        'Subtraction Threshold',
+                        'Subtraction History',
+                        'Average',
+                        'Variable Trigger Point',
+                        'Variable Trigger Point Base',
+                        'Highest Peak',
+                        'Trigger Value']
+
         if not os.path.isfile(self.csv_file):
             self.create()
 
@@ -50,8 +68,13 @@ class MovementCSV:
     Called after the parameters are read.
     """
 
-    def update_parameters(self, _trigger_point, _trigger_point_base, _trigger_point_frames,
-                          _subtraction_threshold, _subtraction_history):
+    def update_parameters(self, _trigger_point,
+                          _trigger_point_base,
+                          _trigger_point_frames,
+                          _subtraction_threshold,
+                          _subtraction_history,
+                          _movement_history_window,
+                          _movement_history_age):
         if self.debug:
             print('CSV:update_parameters')
         self.trigger_point = _trigger_point
@@ -59,6 +82,8 @@ class MovementCSV:
         self.trigger_point_frames = _trigger_point_frames
         self.subtraction_threshold = _subtraction_threshold
         self.subtraction_history = _subtraction_history
+        self.movement_history_window = _movement_history_window
+        self.movement_history_age = _movement_history_age
         if not os.path.isfile(self.csv_file):
             self.create()
 
@@ -123,12 +148,15 @@ class MovementCSV:
                 _writer.writerow({"Timestamp": timestamp,
                                   'Trigger Point': self.trigger_point,
                                   'Trigger Point Base': self.trigger_point_base,
-                                  'Trigger Point Frames': self.trigger_point_frames,
+                                  'Movement History Window': self.movement_history_window,
+                                  'Movement History Age': self.movement_history_age,
                                   'Subtraction Threshold': self.subtraction_threshold,
                                   'Subtraction History': self.subtraction_history,
                                   "Average": self.movement_average,
                                   "Highest Peak": self.movement_highest,
-                                  "Trigger Value": self.trigger_highest})
+                                  "Trigger Value": self.trigger_highest,
+                                  "Variable Trigger Point": self.movement_average + self.trigger_point,
+                                  "Variable Trigger Point Base": self.movement_average + self.trigger_point_base})
             self.trigger_highest = 0
         else:
             with open(self.csv_file, 'a', newline='') as file:
@@ -137,7 +165,8 @@ class MovementCSV:
                 _writer.writerow({"Timestamp": timestamp,
                                   'Trigger Point': 1,
                                   'Trigger Point Base': 1,
-                                  'Trigger Point Frames': 1,
+                                  'Movement History Window': self.movement_history_window,
+                                  'Movement History Age': self.movement_history_age,
                                   'Subtraction Threshold': self.subtraction_threshold,
                                   'Subtraction History': self.subtraction_history,
                                   "Average": 1,
@@ -145,7 +174,7 @@ class MovementCSV:
                                   "Trigger Value": 1})
 
     """
-    Called every minuite.
+    Called every minute.
     """
 
     def write(self):
@@ -159,10 +188,13 @@ class MovementCSV:
             return _writer.writerow({"Timestamp": timestamp,
                                      'Trigger Point': self.trigger_point,
                                      'Trigger Point Base': self.trigger_point_base,
-                                     'Trigger Point Frames': self.trigger_point_frames,
+                                     'Movement History Window': self.movement_history_window,
+                                     'Movement History Age': self.movement_history_age,
                                      'Subtraction Threshold': self.subtraction_threshold,
                                      'Subtraction History': self.subtraction_history,
                                      "Average": self.movement_average,
                                      "Highest Peak": self.movement_highest,
-                                     "Trigger Value": 0})
+                                     "Trigger Value": 0,
+                                     "Variable Trigger Point": self.movement_average + self.trigger_point,
+                                     "Variable Trigger Point Base": self.movement_average + self.trigger_point_base})
         self.movement_highest = 0
