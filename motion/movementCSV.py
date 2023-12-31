@@ -38,7 +38,7 @@ class MovementCSV:
         self.variable_trigger_point = 0 # Variable trigger point = movement_average + trigger point
         self.last_write_time = datetime.now()  # Last write time.
         self.now = datetime.now()
-        self.csv_file = "peakMovement.csv"
+        self.csv_file = "../test/peakMovement.csv"
         self.columns = ['Timestamp',
                         'Trigger Point',
                         'Trigger Point Base',
