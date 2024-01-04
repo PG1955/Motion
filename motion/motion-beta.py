@@ -67,10 +67,11 @@ v3.18   27/04/2023 Include settings in the visits.csv file.
 v3.19   17/12/2023 Add Version class and MovementCSV class.
 v3.20   17/11/2023 Major amendment to use of movement buffers to use advance motion triggering.
 v3.21   31/12/2023 Tidy code and implement beta version for testing mean motion detection.
+v3.22   03/01/2024 Amend triggerCSV layout to include extra trigger point data.
 """
 __author__ = "Peter Goodgame"
 __name__ = "motion"
-__version__ = "v3.21b"
+__version__ = "v3.22b"
 
 import argparse
 import collections
@@ -94,6 +95,7 @@ from picamera2 import Picamera2
 from libcamera import controls
 from visitsCSV import VisitsCSV
 from triggerCSV import TriggerCSV
+
 
 class TriggerMotion:
     sig_usr1 = False
@@ -153,7 +155,6 @@ class MovmentTracker:
 
                 if dist < 25:
                     self.center_points[id] = (cx, cy)
-                    print(self.center_points)
                     objects_bbs_ids.append([x, y, w, h, id])
                     same_object_detected = True
                     break
@@ -491,7 +492,7 @@ class Version:
         fp = open('version.ini', 'w')
         self.vparse.write(fp)
         fp.close()
-        return self.get_version()
+        return self.version
 
 
 class MovementCSV:
@@ -1112,8 +1113,7 @@ if __name__ == "motion":
                                subtraction_history, movement_window, movement_window_age)
 
     # Instantiate Trigger CSV class,
-    trigger_csv = TriggerCSV(trigger_point_csv_window,movement_window, movement_window_age)
-
+    trigger_csv = TriggerCSV(trigger_point, trigger_point_base, trigger_point_csv_window, movement_window, movement_window_age)
 
     # Instantiate visits log.
     if csv_visits_log:
@@ -1334,7 +1334,6 @@ if __name__ == "motion":
         if buffered_movement.size < movement_window + movement_window_age:
             continue
 
-
         old_mean_movement = round(
             np.mean(buffered_movement[-(movement_window + movement_window_age):-(movement_window_age - 1)]))
         old_mean_trigger_point_base = old_mean_movement + trigger_point_base
@@ -1389,7 +1388,6 @@ if __name__ == "motion":
             else:
                 stabilised = True
 
-
         # If SIGUSR1 trigger a mp4 manually.
         if motion.sig_usr1 or (signal_frame > 0 and signal_frame_cnt == signal_frame):
             log.info('Manual SIGUSR1 detected.')
@@ -1411,7 +1409,6 @@ if __name__ == "motion":
             log.info('Manual SIGUSR2 detected.')
             tcsv = timingsCSV(enabled=csv_timings)
             output.sig_usr2 = False
-
 
         # if movement is detected trigger recording.
         if movement_flag:
@@ -1450,7 +1447,7 @@ if __name__ == "motion":
                         c = max(contours, key=cv2.contourArea)
                         bounding_box = cv2.boundingRect(c)
                         box_text = box_jpg.replace('<value>', str(movement_level))
-                        jpg_frame = add_box(jpg_frame, bounding_box, box_text, box_rgb, box_thickness, 1)
+                        jpg_frame = add_box(jpg_frame, bounding_box, box_text, box_rgb, box_thickness, box_font_size)
                         tcsv.log_point('Draw Movement Box on JPG')
 
             # Write Graph.
@@ -1477,7 +1474,7 @@ if __name__ == "motion":
                     x, y, w, h = buffered_bounding_rect[index]
                     box_text = box.replace('<value>', str(buffered_movement[-1::]))
                     buffer[index] = add_box(buffer[index], (x, y, w, h),
-                                            box_text, box_rgb, box_thickness, 1)
+                                            box_text, box_rgb, box_thickness, box_font_size)
                     tcsv.log_point('Draw Movement Box on MP4')
 
             frames_required -= 1
@@ -1553,7 +1550,6 @@ if __name__ == "motion":
 
     if display:
         cv2.destroyAllWindows()
-
 
     if mp4.is_open():
         log.info('Close open MP4 file.')

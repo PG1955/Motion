@@ -64,10 +64,14 @@ v3.15   07/03/2023 Revisit Graph.
 v3.16   09/03/2023 Include camera controls.
 v3.17   09/04/2023 Include visits csv.
 v3.18   27/04/2023 Include settings in the visits.csv file.
+v3.19   17/12/2023 Add Version class and MovementCSV class.
+v3.20   17/11/2023 Major amendment to use of movement buffers to use advance motion triggering.
+v3.21   31/12/2023 Tidy code and implement beta version for testing mean motion detection.
+v3.22   03/01/2024 Amend triggerCSV layout to include extra trigger point data.
 """
 __author__ = "Peter Goodgame"
 __name__ = "motion"
-__version__ = "v3.18"
+__version__ = "v3.22"
 
 import argparse
 import collections
@@ -86,11 +90,11 @@ import cv2
 import numpy as np
 from Journal import journal
 from MotionMP4 import MotionMP4
-from movementCSV import MovementCSV
+import pandas as pd
 from picamera2 import Picamera2
 from libcamera import controls
-import json
 from visitsCSV import VisitsCSV
+from triggerCSV import TriggerCSV
 
 
 class TriggerMotion:
@@ -151,7 +155,6 @@ class MovmentTracker:
 
                 if dist < 25:
                     self.center_points[id] = (cx, cy)
-                    print(self.center_points)
                     objects_bbs_ids.append([x, y, w, h, id])
                     same_object_detected = True
                     break
@@ -462,6 +465,273 @@ class FPS:
             return 0.0
 
 
+class Version:
+    def __init__(self):
+        """
+        This class handles the output version numbering.
+        """
+        self.vparse = configparser.ConfigParser()
+        self.vparse.read('version.ini')
+        self.version = int(self.vparse.get('MP4', 'version'))
+
+    def get_version(self):
+        """
+        Gets the current version number.
+        """
+        self.version += 1
+        return self.version
+
+    def write_version(self):
+        """
+        Updates the version number and returns the next number.
+        """
+        # Update ini file.
+        self.vparse = configparser.ConfigParser()
+        self.vparse.read('version.ini')
+        self.vparse.set('MP4', 'version', str(self.get_version()))
+        fp = open('version.ini', 'w')
+        self.vparse.write(fp)
+        fp.close()
+        return self.version
+
+
+class MovementCSV:
+    def __init__(self, debug=False, interval=60):
+        self.debug = debug
+        self.interval = interval
+        self.trigger_point = 0
+        self.trigger_point_frames = 0
+        self.subtraction_threshold = 0
+        self.subtraction_history = 0
+        self.motion_level = 0  # Current motion level.
+        self.motion_highest = 0  # Maximum movement in the reporting period.
+        self.movement_level = 0  # Current Movement level.
+        self.movement_highest = 0  # Maximum movement in the reporting period.
+        self.movement_average = 0  # Average movement based on mean movement.
+        self.movement_total = 0  # Total movement
+        self.movement_cnt = 0  # Number of frames.
+        self.trigger_highest = 0  # value that triggered movement.
+        self.trigger_point_base = 0  # value at which recording stops.
+        self.tp_buffer_size = 30  # the number of records stored in the buffer.
+        self.tp_buffer = np.zeros((self.tp_buffer_size, 4), np.dtype('uint8'))  # Used to store the past n movements.
+        self.tp_buffer_ptr = 0
+        self.movement_history_window = 0  # Number of past frames to Calculate the average movement level.
+        self.movement_history_age = 0  # Number of frames gap between the movement history frames and the current one.
+        self.variable_trigger_point = 0  # Variable trigger point = movement_average + trigger point
+        self.last_write_time = datetime.now()  # Last write time.
+        self.now = datetime.now()
+        self.csv_file = "peakMovement.csv"
+        self.columns = ['Timestamp',
+                        'Trigger Point',
+                        'Trigger Point Base',
+                        'Movement History Window',
+                        'Movement History Age',
+                        'Subtraction Threshold',
+                        'Subtraction History',
+                        'Average',
+                        'Variable Trigger Point',
+                        'Variable Trigger Point Base',
+                        'Highest Peak',
+                        'Trigger Value']
+
+        if not os.path.isfile(self.csv_file):
+            self.create()
+
+    def create(self):
+        if self.debug:
+            print('CSV:create')
+        with open(self.csv_file, 'w', newline='') as file:
+            # creating a csv dict writer object
+            _writer = csv.DictWriter(file, fieldnames=self.columns)
+            # writing headers (field names)
+            _writer.writeheader()
+
+    """
+    Called after the parameters are read.
+    """
+
+    def update_parameters(self, _trigger_point,
+                          _trigger_point_base,
+                          _trigger_point_frames,
+                          _subtraction_threshold,
+                          _subtraction_history,
+                          _movement_history_window,
+                          _movement_history_age):
+        if self.debug:
+            print('CSV:update_parameters')
+        self.trigger_point = _trigger_point
+        self.trigger_point_base = _trigger_point_base
+        self.trigger_point_frames = _trigger_point_frames
+        self.subtraction_threshold = _subtraction_threshold
+        self.subtraction_history = _subtraction_history
+        self.movement_history_window = _movement_history_window
+        self.movement_history_age = _movement_history_age
+        if not os.path.isfile(self.csv_file):
+            self.create()
+
+    def log_level(self,
+                  ll_movement_level,
+                  ll_movement_level_average,
+                  ll_variable_trigger_point,
+                  ll_variable_trigger_point_base):
+        """
+        Call this for every frame read that is read.
+        """
+        if self.debug:
+            print('CSV:log_level')
+        if not os.path.isfile(self.csv_file):
+            self.create()
+        if ll_movement_level > 0:
+            self.movement_cnt += 1
+            self.movement_total += ll_movement_level
+        if ll_movement_level > self.movement_highest:
+            self.movement_highest = ll_movement_level
+        self.now = datetime.now()
+        diff = self.now - self.last_write_time
+        minutes = round((diff.total_seconds()), 2)
+        # minutes = round((diff.total_seconds() / 60), 2)
+        if minutes >= self.interval:
+            if self.debug:
+                print(f'round({self.movement_total} / {self.movement_cnt})')
+            if self.movement_cnt > 0:
+                self.movement_average = round(self.movement_total / self.movement_cnt)
+            else:
+                self.movement_average = 0
+            self.write()
+            self.last_write_time = self.now
+            self.movement_total = 0
+            self.movement_cnt = 0
+            self.movement_highest = 0
+
+    def log_motion(self, _motion_level):
+        """
+        To be called when motion is detected.
+        if sighup is set to true a record is written with
+        values set temporarily set to 1.
+        """
+        if self.debug:
+            print('CSV:log_motion')
+        if not os.path.isfile(self.csv_file):
+            self.create()
+        if self.trigger_highest < _motion_level:
+            self.trigger_highest = _motion_level
+
+    def motion_write(self, sighup=False):
+        """
+        Call this after motion comes to an end.
+        """
+        if self.debug:
+            print('CSV:motion_write')
+        if not os.path.isfile(self.csv_file):
+            self.create()
+        if not sighup:
+            with open(self.csv_file, 'a', newline='') as file:
+                _writer = csv.DictWriter(file, fieldnames=self.columns)
+                timestamp = self.now.strftime("%Y-%m-%d %H:%M")
+                _writer.writerow({"Timestamp": timestamp,
+                                  'Trigger Point': self.trigger_point,
+                                  'Trigger Point Base': self.trigger_point_base,
+                                  'Movement History Window': self.movement_history_window,
+                                  'Movement History Age': self.movement_history_age,
+                                  'Subtraction Threshold': self.subtraction_threshold,
+                                  'Subtraction History': self.subtraction_history,
+                                  "Average": self.movement_average,
+                                  "Highest Peak": self.movement_highest,
+                                  "Trigger Value": self.trigger_highest,
+                                  "Variable Trigger Point": self.movement_average + self.trigger_point,
+                                  "Variable Trigger Point Base": self.movement_average + self.trigger_point_base})
+            self.trigger_highest = 0
+        else:
+            with open(self.csv_file, 'a', newline='') as file:
+                _writer = csv.DictWriter(file, fieldnames=self.columns)
+                timestamp = self.now.strftime("%Y-%m-%d %H:%M")
+                _writer.writerow({"Timestamp": timestamp,
+                                  'Trigger Point': 1,
+                                  'Trigger Point Base': 1,
+                                  'Movement History Window': self.movement_history_window,
+                                  'Movement History Age': self.movement_history_age,
+                                  'Subtraction Threshold': self.subtraction_threshold,
+                                  'Subtraction History': self.subtraction_history,
+                                  "Average": 1,
+                                  "Highest Peak": 1,
+                                  "Trigger Value": 1})
+
+    def write(self):
+        """
+        Called every minute.
+        """
+        if self.debug:
+            print('CSV:write')
+        if not os.path.isfile(self.csv_file):
+            self.create()
+        with open(self.csv_file, 'a', newline='') as file:
+            _writer = csv.DictWriter(file, fieldnames=self.columns)
+            timestamp = self.now.strftime("%Y-%m-%d %H:%M")
+            return _writer.writerow({"Timestamp": timestamp,
+                                     'Trigger Point': self.trigger_point,
+                                     'Trigger Point Base': self.trigger_point_base,
+                                     'Movement History Window': self.movement_history_window,
+                                     'Movement History Age': self.movement_history_age,
+                                     'Subtraction Threshold': self.subtraction_threshold,
+                                     'Subtraction History': self.subtraction_history,
+                                     "Average": self.movement_average,
+                                     "Highest Peak": self.movement_highest,
+                                     "Trigger Value": 0,
+                                     "Variable Trigger Point": self.movement_average + self.trigger_point,
+                                     "Variable Trigger Point Base": self.movement_average + self.trigger_point_base})
+
+
+class MP4:
+
+    def __init__(self, path, mp4_size, mp4_frame_rate):
+        self.path = path
+        self.size = mp4_size
+        self.frame_rate = mp4_frame_rate
+        self.version = 0
+        self.writer = None
+        self.filename = None
+        self.filepath = None
+        self.avc1 = None
+        self.mp4v = None
+
+        if not os.path.exists(self.path):
+            print('Creating output directory {}'.format(self.path))
+            os.makedirs(self.path)
+
+    def new_filename(self, nf_version):
+        self.version = nf_version
+        self.filename = str(self.version).zfill(3) + '-' + str(
+            datetime.now().strftime('%Y%m%d%H%M%S')) + '.mp4'
+        self.filepath = os.path.join(self.path + os.sep + self.filename)
+        return self.filepath
+
+    def open(self):
+        # x264 = cv2.VideoWriter_fourcc(*'X264')
+        self.avc1 = cv2.VideoWriter_fourcc(*'AVC1')
+        self.mp4v = cv2.VideoWriter_fourcc(*'mp4v')
+        self.writer = cv2.VideoWriter(self.new_filename(self.version), self.mp4v, self.frame_rate, self.size)
+        return self.writer
+
+    def close(self):
+        self.writer.release()
+        self.writer = None
+
+    def is_open(self):
+        if self.writer:
+            return True
+        else:
+            return False
+
+    def get_filename(self):
+        return self.filename
+
+    def get_pathname(self):
+        return self.filepath
+
+
+# End Classes
+
+
 # =============================================
 # --- Global storage. -------------------------
 # =============================================
@@ -469,7 +739,7 @@ global trigger_point
 global trigger_point_base
 
 
-def readConfiguration(signalNumber, frame):
+def read_configuration(signalNumber, frame):
     print('(SIGHUP) reading configuration')
     return
 
@@ -554,7 +824,8 @@ def add_statistics(ps_frame):
     ps_stats = f'Software version: {__version__}\n\
 Frame rates: Record: {image_record_fps} Playback: {image_playback_fps}\n\
 Exposure: {exp_time}, Gain: {ana_gain}\n\
-Trigger Point: {trigger_point} Base point {trigger_point_base}\n\
+Trigger Point: {trigger_point} Base  {trigger_point_base} \n\
+Average Window {movement_window} Delay {movement_window_age} Frame Cnt {movement_frame_count}\n\
 MOG2 Subtraction Threshold: {subtraction_threshold}\n\
 MOG2 Subtraction History: {subtraction_history}\n\
 Total Frames: {frames_written}\n\
@@ -620,7 +891,7 @@ def add_box(ab_frame, ab_area, ab_label, ab_color, ab_thickness=1, ab_fontsize=1
     y = ab_area[1]
     w = ab_area[2]
     h = ab_area[3]
-    cv2.rectangle(ab_frame, (x, y), (x + w, y + h), ab_color, ab_thickness)
+    cv2.rectangle(ab_frame, (x, y), (x + w, y + h), ab_color, 1)
     cv2.putText(ab_frame, ab_label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, ab_fontsize, ab_color, ab_thickness)
     return ab_frame
 
@@ -680,17 +951,22 @@ def Average(array):
     return round(sum(array) / len(array), 2)
 
 
-def check_movement(_contours, _movement_flag):
-    m_level = len(_contours)
-    _movement_ended = None
-    if m_level >= trigger_point or (_movement_flag and m_level >= trigger_point_base):
-        _movement_flag = True
-        _movement_ended = False
-    elif m_level < trigger_point_base:
-        if _movement_flag:
-            _movement_ended = True
-        _movement_flag = False
-    return _movement_flag, _movement_ended, m_level
+"""
+v3.20 Advanced movement detection """
+
+"""
+Return True if the number of frames containing movement exceeds the frame count ceiling.
+"""
+
+
+def check_frame_count():
+    global consecutive_movement_frame_cnt
+    print(f'{consecutive_movement_frame_cnt} >= {movement_frame_count}')
+    if consecutive_movement_frame_cnt >= movement_frame_count:
+        return True
+    else:
+        consecutive_movement_frame_cnt += 1
+        return False
 
 
 def zoom(img, zoom_factor=1.5):
@@ -732,6 +1008,9 @@ def debug_size(_image):
         print(f'Image size is {_image.shape}')
 
 
+"""
+Start Program
+"""
 if __name__ == "motion":
     # mp.freeze_support()
     software_version = __version__
@@ -744,9 +1023,9 @@ if __name__ == "motion":
     args = parser.parse_args()
     # get an instance of the logger object this module will use
     log = get_logger()
-
     signal_frame = args.signal
     debug = args.debug
+
     if debug:
         log.debug('Debug os on')
 
@@ -764,22 +1043,24 @@ if __name__ == "motion":
     parser.read('motion.ini')
 
     box = get_parameter(parser, 'box', 'OFF')
-    box_font_size = float(get_parameter(parser, 'box_font_size', '0.5'))
+    box_font_size = float(get_parameter(parser, 'box_font_size', '1'))
     box_jpg = get_parameter(parser, 'box_jpg', 'OFF')
     box_rgb = get_bgr(get_parameter(parser, 'box_rgb', '255,255,255'))
     box_thickness = int(get_parameter(parser, 'box_thickness', '1'))
+    camera_controls = get_parameter(parser, 'camera_controls', 'off')
+    camera_tuning_file = get_parameter(parser, 'camera_tuning_file', 'off')
     command = get_parameter(parser, 'command', 'None')
     csv_output = get_parameter(parser, 'csv_output', 'off')
-    csv_visits_log = get_parameter(parser, 'csv_visits_log', 'off')
     csv_timings = get_parameter(parser, 'csv_timings', 'off')
-    date_rgb = get_bgr(get_parameter(parser, 'date_rgb', '255,255,255'))
+    csv_visits_log = get_parameter(parser, 'csv_visits_log', 'off')
     date_font_scale = float(get_parameter(parser, 'date_font_scale', '1.0'))
     date_font_thickness = int(get_parameter(parser, 'date_font_thickness', '1'))
     date_position = get_parameter(parser, 'date_position', 'none')
+    date_rgb = get_bgr(get_parameter(parser, 'date_rgb', '255,255,255'))
     display = get_parameter(parser, 'display', 'off')
+    display_frame_cnt = get_parameter(parser, 'display_frame_cnt', 'off')
     display_image_height = int(get_parameter(parser, 'display_image_height', '480'))
     display_image_width = int(get_parameter(parser, 'display_image_width', '640'))
-    display_frame_cnt = get_parameter(parser, 'display_frame_cnt', 'off')
     display_roi = get_parameter(parser, 'display_roi', 'off')
     display_roi_font_size = float(get_parameter(parser, 'display_roi_font_size', '0.5'))
     display_roi_jpg = get_parameter(parser, 'display_roi_jpg', 'off')
@@ -789,51 +1070,58 @@ if __name__ == "motion":
     draw_jpg_graph = get_parameter(parser, 'draw_jpg_graph', 'off')
     grace_frames = int(get_parameter(parser, 'grace_frames', '0'))
     image_exposure = int(get_parameter(parser, 'exposure', '0'))
-    image_horizontal_flip = bool(get_parameter(parser, 'image_horizontal_flip', 'off'))
     image_height = int(get_parameter(parser, 'image_height', '480'))
-    lores_width = int(get_parameter(parser, 'lores_width', '640'))
-    lores_height = int(get_parameter(parser, 'lores_height', '360'))
-    main_width = int(get_parameter(parser, 'main_width', '1280'))
-    main_height = int(get_parameter(parser, 'main_height', '720'))
+    image_horizontal_flip = bool(get_parameter(parser, 'image_horizontal_flip', 'off'))
     image_playback_fps = int(get_parameter(parser, 'image_playback_fps', 30))
     image_record_fps = int(get_parameter(parser, 'image_record_fps', 30))
     image_vertical_flip = bool(get_parameter(parser, 'image_vertical_flip', 'off'))
     image_width = int(get_parameter(parser, 'image_width', '640'))
+    lores_height = int(get_parameter(parser, 'lores_height', '360'))
+    lores_width = int(get_parameter(parser, 'lores_width', '640'))
+    main_height = int(get_parameter(parser, 'main_height', '720'))
+    main_width = int(get_parameter(parser, 'main_width', '1280'))
     mask_path = get_parameter(parser, 'mask_path', 'off')
+    movement_window = int(get_parameter(parser, 'movement_window', '0'))
+    movement_window_age = int(get_parameter(parser, 'movement_window_age', '0'))
+    movement_frame_count = int(get_parameter(parser, 'movement_frame_count', '0'))
     output_dir = get_parameter(parser, 'output_dir', 'Motion')
     post_frames = int(get_parameter(parser, 'post_frames', '1'))
     pre_frames = int(get_parameter(parser, 'pre_frames', '1'))
     stabilise = int(get_parameter(parser, 'stabilise', '10'))
     statistics = get_parameter(parser, 'statistics', 'off')
-    statistics_rgb = get_bgr(get_parameter(parser, 'statistics_rgb', '255,255,255'))
     statistics_font_scale = float(get_parameter(parser, 'statistics_font_scale', '1.0'))
     statistics_font_thickness = int(get_parameter(parser, 'statistics_font_thickness', '1'))
     statistics_jpg = get_parameter(parser, 'statistics_jpg', 'off')
+    statistics_rgb = get_bgr(get_parameter(parser, 'statistics_rgb', '255,255,255'))
     subtraction_history = int(get_parameter(parser, 'subtraction_history', 100))
     subtraction_threshold = int(get_parameter(parser, 'subtraction_threshold', 40))
     timelapse_frame_number = int(get_parameter(parser, 'timelapse_frame_number', '0'))
     timings_cnt = int(get_parameter(parser, 'timings_cnt', '0'))
     trigger_point = int(get_parameter(parser, 'trigger_point', 200))
     trigger_point_base = int(get_parameter(parser, 'trigger_point_base', 100))
-    camera_tuning_file = get_parameter(parser, 'camera_tuning_file', 'off')
-    camera_controls = get_parameter(parser, 'camera_controls', 'off')
+    trigger_point_csv_window = int(get_parameter(parser, 'trigger_point_csv_window', 0))
+    trigger_point_frames = int(get_parameter(parser, 'trigger_point_frames', 1))
     yolo_detection = bool(get_parameter(parser, 'yolo_detection', 'off'))
     yolo_output = bool(get_parameter(parser, 'yolo_output', 'off'))
     zoom_factor = float(get_parameter(parser, 'zoom_factor', 0))
 
     # Instantiate movementCSV file writing.
+    mcsv = None
     if csv_output:
         mcsv = MovementCSV()
-        mcsv.update_parameters(trigger_point, trigger_point_base, subtraction_threshold, subtraction_history)
+        mcsv.update_parameters(trigger_point, trigger_point_base, trigger_point_frames, subtraction_threshold,
+                               subtraction_history, movement_window, movement_window_age)
+
+    # Instantiate Trigger CSV class,
+    trigger_csv = TriggerCSV(trigger_point, trigger_point_base, trigger_point_csv_window, movement_window, movement_window_age)
 
     # Instantiate visits log.
     if csv_visits_log:
         visits = VisitsCSV()
 
     # Read the version ini file.
-    parser = configparser.ConfigParser()
-    parser.read('version.ini')
-    version = int(parser.get('MP4', 'version'))
+    version_class = Version()
+    version_num = version_class.get_version()
 
     # Enable a graph.
     graph = Graph(lores_width, lores_height, 10, trigger_point_base, trigger_point)
@@ -872,6 +1160,7 @@ if __name__ == "motion":
                                                          varThreshold=subtraction_threshold)
     exposure_controls = None
     focus_controls = None
+    consecutive_movement_frame_cnt = 0  # Used by motion detection.
     log.info('Initialise MP4 output')
 
     if camera_tuning_file and not os.name == 'nt':
@@ -896,7 +1185,6 @@ if __name__ == "motion":
         log.info('No tuning file specified in the motion.ini file.')
         picam2 = Picamera2()
 
-    video_config = picam2.create_video_configuration()
     video_config = picam2.create_video_configuration(
         main={"size": (main_width, main_height), "format": "RGB888"})
 
@@ -915,16 +1203,15 @@ if __name__ == "motion":
     buffer = np.zeros((pre_frames, lores_height, lores_width, 3), np.dtype('uint8'))
     buffered_frame = np.zeros((1, lores_height, lores_width, 3), np.dtype('uint8'))
     buffered_bounding_rect = np.zeros((pre_frames, 4), np.dtype('uint16'))
-    buffered_movement = np.zeros((pre_frames, 1), np.dtype('uint16'))
-
+    buffered_movement = np.array([])
     jpg_frame = np.zeros((1, lores_height, lores_width, 3), np.dtype('uint8'))
     timelapse_frame = np.zeros((1, lores_height, lores_width, 3), np.dtype('uint8'))
     yolo_frame = np.zeros((1, main_height, main_width, 3), np.dtype('uint8'))
     yolo_peak_movement_frame = np.zeros((1, main_height, main_width, 3), np.dtype('uint8'))
-
     log.info('Camera started')
 
-    mp4 = MotionMP4(output_dir, size, version, image_playback_fps)
+    # Instantiate mp4 output.
+    mp4 = MP4(output_dir, size, image_playback_fps)
 
     if yolo_detection:
         yolo = Yolo()
@@ -932,7 +1219,9 @@ if __name__ == "motion":
     log.info('PID: {}'.format(os.getpid()))
     # Read images and process them.
     jpg_contour = 0
+    movement_level = 0  # Movement level.
     movement_flag = False  # Set to true is movement is detected.
+    movement_triggered = False  # Set only when processing the frame that triggered movement.
     movement_ended = False  # Set when movement ends.
     movement_frame_cnt = 0  # Number of frames since movement was detected.
     movement_total = 0  # Total contour count for consecutive frames.
@@ -942,6 +1231,7 @@ if __name__ == "motion":
     resize = False
     stabilised = False
     signal_frame_cnt = 0
+    average_window_cnt = 0  # Used to ensure all stored frame values are populated.
 
     # Instantiate timings.
     tcsv = timingsCSV(enabled=csv_timings, grace=subtraction_history)
@@ -969,6 +1259,11 @@ if __name__ == "motion":
 
         # Log Frames per second.
         fps()
+
+        # For debugging check frame number.
+        if signal_frame > 0 and signal_frame_cnt < signal_frame:
+            signal_frame_cnt += 1
+            print(f'SigFrame: {signal_frame} Signal frame count: {signal_frame_cnt}')
 
         # Apply the mask.
         if mask_path:
@@ -1008,11 +1303,16 @@ if __name__ == "motion":
         if len(contours) > 1:
             c = max(contours, key=cv2.contourArea)
             x, y, w, h = cv2.boundingRect(c)
-            buffered_movement[index] = len(contours)
             buffered_bounding_rect[index] = (x, y, w, h)
+            # Append the values to the array then drop the obsolete values.
+            movement_level = len(contours)
+            buffered_movement = np.append(buffered_movement, movement_level)
         else:
-            buffered_movement[index] = 0
+            buffered_movement = np.append(buffered_movement, 0)
             buffered_bounding_rect[index] = (0, 0, 0, 0)
+
+        # Trim the movement buffer.
+        buffered_movement = buffered_movement[((movement_window + movement_window_age) + 1) * -1::]
 
         # Display the live feed.
         if display:
@@ -1025,23 +1325,81 @@ if __name__ == "motion":
             display_frame = resize_img(buffer[index], (display_image_width, display_image_height))
             cv2.imshow('Live Data', display_frame)
 
-        # Check for movement based in the trigger levels.
-        movement_flag, movement_ended, movement_level = check_movement(
-            contours, movement_flag)
-        buffered_movement[index] = movement_level
+        # Get the average movement over the movement window using movement_window_age.
+        mean_movement = round(np.mean(buffered_movement[:(movement_window + movement_window_age + 1)]))
+        mean_trigger_point = mean_movement + trigger_point
+        mean_trigger_point_base = mean_movement + trigger_point_base
+
+        # Ensure the buffered_movement buffer is fully populated.
+        if buffered_movement.size < movement_window + movement_window_age:
+            continue
+
+        old_mean_movement = round(
+            np.mean(buffered_movement[-(movement_window + movement_window_age):-(movement_window_age - 1)]))
+        old_mean_trigger_point_base = old_mean_movement + trigger_point_base
+        old_mean_trigger_point = old_mean_movement + trigger_point
+
+        # Check for movement. Compare the mean movement level with this movement level.
+        # Do this after the movement buffer is complete.
+        if movement_window_age > 0:
+            trigger_csv.log_movement(old_mean_trigger_point, old_mean_trigger_point_base, mean_movement)
+            if movement_flag:
+                movement_triggered = False
+                movement_ended = True
+                if mean_movement < old_mean_trigger_point_base:
+                    movement_flag = False
+                    movement_ended = True
+            else:
+                # When movement_flag is not set.
+                if mean_movement > old_mean_trigger_point:
+                    movement_flag = True
+                    movement_triggered = True
+                    trigger_csv.movement_triggered()
+        else:
+            trigger_csv.log_movement(trigger_point, trigger_point_base, movement_level)
+            if movement_flag:
+                movement_triggered = False
+                movement_ended = True
+                if movement_level < trigger_point_base:
+                    movement_flag = False
+                    movement_ended = True
+            else:
+                if movement_level > trigger_point:
+                    movement_flag = True
+                    movement_triggered = True
+                    trigger_csv.movement_triggered()
+
         tcsv.log_point('Check movement')
 
         # Send the motion level to the CSV class.
         if csv_output:
-            mcsv.log_level(movement_level)
+            mcsv.log_level(movement_level,
+                           mean_movement,
+                           mean_trigger_point,
+                           mean_trigger_point_base)
+
+        # Stabilise the camera
+        if not stabilised:
+            jpg_frame = np.copy(buffer[index])
+            yolo_peak_movement_frame = np.copy(main_frame)
+            stabilisation_cnt += 1
+            if stabilisation_cnt < stabilise + pre_frames:
+                continue
+            else:
+                stabilised = True
 
         # If SIGUSR1 trigger a mp4 manually.
-        if motion.sig_usr1:
+        if motion.sig_usr1 or (signal_frame > 0 and signal_frame_cnt == signal_frame):
             log.info('Manual SIGUSR1 detected.')
+            signal_frame = 0
             movement_flag = True
+            movement_triggered = True
+            movement_trigger_csv = True
+            movement_trigger_csv_counter = movement_window_age
             jpg_frame = np.copy(buffer[index])
             yolo_peak_movement_frame = np.copy(main_frame)
             motion.sig_usr1 = False
+            trigger_csv.movement_triggered()
 
             if csv_output:
                 mcsv.motion_write(sighup=True)
@@ -1057,8 +1415,10 @@ if __name__ == "motion":
             if mp4.is_open():
                 frames_required = post_frames + 1
             else:
-                frames_required = pre_frames + post_frames + 1
+                # Update the version number
+                mp4.new_filename(version_num)
                 writer = mp4.open()
+                frames_required = pre_frames + post_frames + 1
                 log.info('Opening {name}...'.format(name=mp4.get_filename()))
                 exposure_controls = get_exposure()
                 if draw_jpg_graph or draw_graph and not recording_flag:
@@ -1073,9 +1433,8 @@ if __name__ == "motion":
                 recording_flag = graph.put_stop_icon()
 
         if frames_required > 0:
-            # Get the frame with the highest movement for the JPG file.
-            if movement_peak < movement_level:
-                movement_peak = movement_level
+            if movement_peak < int(buffered_movement[-1::]):
+                movement_peak = int(buffered_movement[-1::])
                 movement_peak_frame = frames_written + pre_frames
                 jpg_frame = np.copy(buffer[index])
                 # Save YOLO frame.
@@ -1092,7 +1451,7 @@ if __name__ == "motion":
                         tcsv.log_point('Draw Movement Box on JPG')
 
             # Write Graph.
-            graph.update_frame(int(buffered_movement[index]))
+            graph.update_frame(int(buffered_movement[-1::]))
             tcsv.log_point('Update Graph Frame')
 
             # Draw graph
@@ -1102,7 +1461,7 @@ if __name__ == "motion":
 
             # Display the frame count.
             if display_frame_cnt:
-                put_frame_cnt(buffer[index], frames_written)
+                put_frame_cnt(buffered_frame, frames_written)
 
             # Draw roi on mp4 file.
             if display_roi and mask_path:
@@ -1110,11 +1469,11 @@ if __name__ == "motion":
                                          display_roi_thickness, display_roi_font_size)
 
             # Draw a box around the area of movement on MP4.
-            if not box == 'OFF' and buffered_movement[index] > 1:
-                if buffered_movement[index]:
-                    # x, y, w, h = buffer_bounding_rect[index]
-                    box_text = box.replace('<value>', str(buffered_movement[index]))
-                    buffer[index] = add_box(buffer[index], buffered_bounding_rect[index],
+            if not box == 'OFF' and buffered_movement[-1::] > 1:
+                if buffered_movement[-1::]:
+                    x, y, w, h = buffered_bounding_rect[index]
+                    box_text = box.replace('<value>', str(buffered_movement[-1::]))
+                    buffer[index] = add_box(buffer[index], (x, y, w, h),
                                             box_text, box_rgb, box_thickness, box_font_size)
                     tcsv.log_point('Draw Movement Box on MP4')
 
@@ -1128,7 +1487,7 @@ if __name__ == "motion":
                 cv2.imshow('Recorded Data', display_buffered_frame)
         else:
             if mp4.is_open():
-                journal.write('Closing {name}'.format(name=mp4.get_filename()))
+                # journal.write(f'Closing {mp4.get_filename()}')
                 # Write Timelapse JPG before any decorations are added to the frame.
                 if timelapse_frame_number > 0:
                     write_timelapse_jpg(buffered_frame)
@@ -1149,6 +1508,13 @@ if __name__ == "motion":
 
                 write_jpg(jpg_frame)
                 tcsv.log_point('Write JPEG')
+
+                # csv_path = 'Motion/testTrigger.csv'
+                csv_path = mp4.get_pathname().replace('mp4', 'csv')
+                trigger_csv.write_csv(csv_path)
+
+                # Update the version number ini file and get the next number.
+                version_num = version_class.write_version()
 
                 # Run the command to copy over the mp4 file.
                 if not command == "None":
@@ -1184,14 +1550,6 @@ if __name__ == "motion":
 
     if display:
         cv2.destroyAllWindows()
-
-    # Update ini file.
-    parser = configparser.ConfigParser()
-    parser.read('version.ini')
-    parser.set('MP4', 'version', str(mp4.get_version()))
-    fp = open('version.ini', 'w')
-    parser.write(fp)
-    fp.close()
 
     if mp4.is_open():
         log.info('Close open MP4 file.')

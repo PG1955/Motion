@@ -1,12 +1,11 @@
 import argparse
 import os
+
+import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
 parser = argparse.ArgumentParser(description="Report Trigger Event")
-# parser.add_argument('--hours', type=int, default=0, help="Enter the number of hours to report.")
-# parser.add_argument('--minutes', type=int, default=0, help="Enter the number of minutes to report.")
-# parser.add_argument('--title', default="Latest Movement", help="Enter the Title of the report.")
 parser.add_argument('--filename', default="Motion/triggerPlot.csv",
                     help="Enter the output filename, an extension of png will be added.")
 
@@ -16,8 +15,11 @@ df = pd.read_csv(filename)
 
 tp = int(df['Trigger Point'].iloc[-1])
 tpb = int(df['Trigger Point Base'].iloc[-1])
+etp = int(df['Event Trigger Point'].iloc[-1])
+etpb = int(df['Event Trigger Point Base'].iloc[-1])
 mw = int(df['Movement Window'].iloc[-1])
 mwa = int(df['Movement Window Age'].iloc[-1])
+half_way = round(len(df) / 2)
 
 fig, (ax1) = plt.subplots(1, sharex=True)
 
@@ -32,29 +34,48 @@ ax1.plot(df['Movement Level'],
          label='Mvmt Level'
          )
 
-ax1.plot(df['Trigger Point'],
+ax1.plot(df['Event Trigger Point'],
          color='Green',
+         alpha=0.5,
+         label=f'Event TP {etp}'
+         )
+
+ax1.plot(df['Event Trigger Point Base'],
+         color='Red',
+         alpha=0.5,
+         label=f'Event TP Base {etpb}'
+         )
+
+
+if mw > 0:
+    ax1.plot(df['Movement Window'],
+             color='Blue',
+             alpha=0.5,
+             label=f'Mvmt Win {mw}'
+             )
+
+if mwa > 0:
+    ax1.plot(df['Movement Window Age'],
+             color='Orange',
+             alpha=0.5,
+             label=f'Mvmt Win Age {mwa}'
+             )
+
+ax1.plot(df['Trigger Point'],
+         color='White',
          alpha=0.5,
          label=f'TP {tp}'
          )
 
 ax1.plot(df['Trigger Point Base'],
-         color='Red',
+         color='White',
          alpha=0.5,
          label=f'TPBase {tpb}'
          )
 
-ax1.plot(df['Movement Window'],
-         color='Blue',
-         alpha=0.5,
-         label=f'Mvmt Win {mw}'
-         )
 
-ax1.plot(df['Movement Window Age'],
-         color='Orange',
-         alpha=0.5,
-         label=f'Mvmt Win Age {mwa}'
-         )
+ax1.axvline(x=half_way)
+
 
 ax1.legend(loc='best')
 
