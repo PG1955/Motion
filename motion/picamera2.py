@@ -2,7 +2,6 @@ import libcamera
 import cv2
 from os.path import exists
 
-
 class SensorFormat:
     pass
 
@@ -10,8 +9,9 @@ class SensorFormat:
 class Picamera2:
     signal_event = None
 
-    def __init__(self):
-        self.controls = None
+    def __init__(self, tuning=None):
+        # self.controls = None
+        self.controls = Controls(self)
         self.AnalogueGain = None
         self.ExposureTime = None
         self.camera_config = None
@@ -31,7 +31,9 @@ class Picamera2:
         self.ExposureTime = None
 
     def __enter__(self):
-        pass
+        self.AnalogueGain = None
+        self.ExposureTime = None
+        # pass
         # self._lock.acquire()
         # return self
 
@@ -261,6 +263,39 @@ class Picamera2:
 
     def check_stream_config(self, param, param1):
         pass
+
+    @classmethod
+    def load_tuning_file(cls, camera_tuning_file):
+        pass
+
+    @classmethod
+    def find_tuning_algo(cls, tuning, param):
+        pass
+
+    def start_and_record_video(self, param, duration):
+        pass
+
+
+class Controls():
+    def __init__(self , picam2, controls=None):
+        self.picam2 = picam2
+        self.AnalogueGain = None
+        self.ExposureTime = None
+        self.controls = None
+        self.attribute = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, tb):
+        pass
+
+    def __setattr__(self, key, value):
+        pass
+
+    def __getattr__(self, item):
+        pass
+
 
 
 def close(self) -> None:

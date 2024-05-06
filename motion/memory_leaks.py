@@ -1,3 +1,6 @@
+from pympler.tracker import SummaryTracker
+
+
 """
 Motion for Python3. Emulates MotionEye but uses tne libcamera library
 Arducam low light camera.
@@ -12,7 +15,7 @@ v1.16   20/02/2022  Add report motion average peak.
 v1.17   23/02/2022  Add recording_trigger logic. Tidy stats and include exposure.
 v1.18   23/02/2022  Add a graph panel thanks to Rune.
 v1.19   25/02/2022  Coloured graph with scaling,
-v1.20   26/02.2022  Calculate scalling factor. Rename sensitivity_level trigger_point.
+v1.20   26/02.2022  Caluculate scalling factor. Rename sensitivity_level trigger_point.
 v1.21   27/02/2022  Rotate image 180.
 v1.22   01/03/2022  Add peak movement information to statistics.
 v1.23   05/03/2022  Take jpg from at the point of peak movement.
@@ -48,7 +51,7 @@ v3.00   11/09/2022 Add YOLO option.
 v3.01   13/09/2022 Replace MotionCSV class with an external one.
 v3.02   14/09/2022 Enable writing of a jpg showing te the highest movement for YOLO analysis.
 v3.03   13/10/2022 If a file called tuning.json is found load it.
-v3.04   15/10/2022 Enable SIGUSR2 signal to re-output timings.
+v3.04   15/10/2022 Enable SIGURS2 signal to re-output timings.
 v3.05   20/10/2022 Add camera_tuning_file parameter. Only effective with rpi.
 v3.06   22/10/2022 Add function to zoom in the image via zoom_factor.
 v3.07   26/10/2022 Fix bug where maks file does not exist.
@@ -70,49 +73,38 @@ v3.21   31/12/2023 Tidy code and implement beta version for testing mean motion 
 v3.22   03/01/2024 Amend triggerCSV layout to include extra trigger point data.
 v3.23   08/01/2024 Reorganise motion.ini file to contain sections, write if a file does not exist.
 v3.24   31/01/2024 Add a function to add the temperature to the video.
-v3.25   14/03/2024 Add temperature to the timelapse frame.
-v3.26   26/03/2024 Add a event to closedown the socket correctly.
-v3.27   27/03/2024 Handle SIGINT and SIGTERM correctly to allow shutdown of threads and fix systemd logging.
-v3.28   01/04/2024 Implement a replacement socket server motion_server.
-v3.29   10/04/2024 Implement a last occupied time for the socket server.
-v3.30   18/04/2024 Include a log of recording times.
-v3.31   22/04/2024 Use recording CSV to check recording status.
-v3.32   25/04/2024 Remove the socket server.
+v3.25   12/02/2024 Fix Memory Leak.
 """
 __author__ = "Peter Goodgame"
 __name__ = "motion"
-__version__ = "v3.32b"
+__version__ = "v3.25b"
 
-import gc
-import os
+s_track = SummaryTracker()
+
+
 import argparse
 import collections
 import configparser
 import csv
 import logging
-
-try:
-    from systemd.journal import JournalHandler
-except ModuleNotFoundError:
-    pass
-
 import math
+import os
 import signal
 import subprocess
-import psutil
 import sys
 import time
 from datetime import datetime
 from pathlib import Path
 import cv2
 import numpy as np
+from Journal import journal
+from MotionMP4 import MotionMP4
+import pandas as pd
 from picamera2 import Picamera2
 from libcamera import controls
 from visitsCSV import VisitsCSV
 from triggerCSV import TriggerCSV
 from tempLogCSV import TempCSV
-from fpsLogCSV import FPSLogCSV
-from recordingLogCSV import RecordingLogCSV
 
 
 class TriggerMotion:
@@ -162,9 +154,9 @@ class MovementTracker:
 
         # Get center point of new object
         for rect in objects_rect:
-            mt_x, mt_y, mt_w, mt_h = rect
-            cx = (mt_x + mt_x + mt_w) // 2
-            cy = (mt_y + mt_y + mt_h) // 2
+            x, y, w, h = rect
+            cx = (x + x + w) // 2
+            cy = (y + y + h) // 2
 
             # Find out if that object was detected already
             same_object_detected = False
@@ -173,14 +165,14 @@ class MovementTracker:
 
                 if dist < 25:
                     self.center_points[id] = (cx, cy)
-                    objects_bbs_ids.append([mt_x, mt_y, mt_w, mt_h, id])
+                    objects_bbs_ids.append([x, y, w, h, id])
                     same_object_detected = True
                     break
 
             # New object is detected we assign the ID to that object
             if same_object_detected is False:
                 self.center_points[self.id_count] = (cx, cy)
-                objects_bbs_ids.append([mt_x, mt_y, mt_w, mt_h, self.id_count])
+                objects_bbs_ids.append([x, y, w, h, self.id_count])
                 self.id_count += 1
 
         # Clean the dictionary by center points to remove IDS not used anymore
@@ -225,7 +217,7 @@ class Graph:
         new_graph = np.zeros((self.y, self.x, 3), np.uint8)
         new_graph[:, :-1, :] = self.graph[:, 1:, :]
         green = 0, 255, 0
-        # yellow = 0, 227, 255
+        yellow = 0, 227, 255
         amber = 0, 183, 245
         white = 255, 255, 255
 
@@ -248,7 +240,7 @@ class Graph:
 
     def put_start_icon(self):
         red = 0, 0, 255
-        # black = 255, 255, 255
+        black = 255, 255, 255
         self.graph = np.zeros((self.y, self.x, 3), np.uint8)
         for i in reversed(range(self.icon_size)):
             top = int((self.y / 2) - (i / 2))
@@ -292,10 +284,10 @@ class Graph:
         return g_frame[-abs(self.y + self.b):-abs(self.b), -abs(self.x + self.b):-abs(self.b), :]
 
 
-class TimingsCSV:
+class timingsCSV:
     """
     This class will output timing data4.
-    maximum is the maximum number of records written default is 1000.
+    maximum is the maximum number of records written default is 100.
     """
 
     def __init__(self, enabled=False, grace=1):
@@ -311,7 +303,7 @@ class TimingsCSV:
         self.current_ms = 0
         self.time_ms = 0
         self.csv_file = "timings.csv"
-        self.columns = ['Point', 'Milliseconds']
+        self.columns = header = ['Point', 'Milliseconds']
         self.delete()
         self.create()
 
@@ -364,7 +356,7 @@ class TimingsCSV:
                 return False
 
 
-class FramesPerSecondCSV:
+class fpsCSV:
     """
     Create a csv file showing how many frames are processed each second.
     """
@@ -374,7 +366,7 @@ class FramesPerSecondCSV:
         self.record_cnt = 0  # Number of records written.
         self.frame_cnt = 0  # Frames processed.
         self.csv_file = "frames-per-second.csv"
-        self.columns = ['Seconds', 'Target', 'FPS']
+        self.columns = header = ['Seconds', 'Target', 'FPS']
         self.delete()
         self.create()
         self.now = 0
@@ -435,7 +427,6 @@ class Yolo:
         self.outs = None
         self.width = None
         self.height = None
-        self.channels = None
 
     def detect_objects(self, image):
         self.image = image
@@ -445,8 +436,8 @@ class Yolo:
         self.net.setInput(self.blob)
         self.outs = self.net.forward(self.output_layers)
 
-    def display_objects(self):
-        # Show information on the screen
+    def display_obects(self):
+        # Showing informations on the screen
         class_ids = []
         confidences = []
         boxes = []
@@ -476,13 +467,13 @@ class FPS:
 
     def __call__(self):
         self.frametimestamps.append(time.time())
-        if len(self.frametimestamps) > 1:
+        if (len(self.frametimestamps) > 1):
             return len(self.frametimestamps) / (self.frametimestamps[-1] - self.frametimestamps[0])
         else:
             return 0.0
 
     def get_fps(self):
-        if len(self.frametimestamps) > 1:
+        if (len(self.frametimestamps) > 1):
             return len(self.frametimestamps) / (self.frametimestamps[-1] - self.frametimestamps[0])
         else:
             return 0.0
@@ -519,8 +510,8 @@ class Version:
 
 
 class MovementCSV:
-    def __init__(self, debug_movements_csv=False, interval=60):
-        self.debug = debug_movements_csv
+    def __init__(self, debug=False, interval=60):
+        self.debug = debug
         self.interval = interval
         self.trigger_point = 0
         self.trigger_point_frames = 0
@@ -561,7 +552,8 @@ class MovementCSV:
             self.create()
 
     def create(self):
-        log.info(f'CSV:created file {self.csv_file}')
+        if self.debug:
+            print('CSV:create')
         with open(self.csv_file, 'w', newline='') as file:
             # creating a csv dict writer object
             _writer = csv.DictWriter(file, fieldnames=self.columns)
@@ -592,7 +584,11 @@ class MovementCSV:
         if not os.path.isfile(self.csv_file):
             self.create()
 
-    def log_level(self, ll_movement_level):
+    def log_level(self,
+                  ll_movement_level,
+                  ll_movement_level_average,
+                  ll_variable_trigger_point,
+                  ll_variable_trigger_point_base):
         """
         Call this for every frame read that is read.
         """
@@ -688,19 +684,19 @@ class MovementCSV:
         with open(self.csv_file, 'a', newline='') as file:
             _writer = csv.DictWriter(file, fieldnames=self.columns)
             timestamp = self.now.strftime("%Y-%m-%d %H:%M")
-            _writer.writerow({"Timestamp": timestamp,
-                              'Trigger Point': self.trigger_point,
-                              'Trigger Point Base': self.trigger_point_base,
-                              'Movement History Window': self.movement_history_window,
-                              'Movement History Age': self.movement_history_age,
-                              'Subtraction Threshold': self.subtraction_threshold,
-                              'Subtraction History': self.subtraction_history,
-                              "Average": self.movement_average,
-                              "Highest Peak": self.movement_highest,
-                              "Trigger Value": 0,
-                              "Variable Trigger Point": self.movement_average + self.trigger_point,
-                              "Variable Trigger Point Base": self.movement_average + self.trigger_point_base})
-
+            return _writer.writerow({"Timestamp": timestamp,
+                                     'Trigger Point': self.trigger_point,
+                                     'Trigger Point Base': self.trigger_point_base,
+                                     'Movement History Window': self.movement_history_window,
+                                     'Movement History Age': self.movement_history_age,
+                                     'Subtraction Threshold': self.subtraction_threshold,
+                                     'Subtraction History': self.subtraction_history,
+                                     "Average": self.movement_average,
+                                     "Highest Peak": self.movement_highest,
+                                     "Trigger Value": 0,
+                                     "Variable Trigger Point": self.movement_average + self.trigger_point,
+                                     "Variable Trigger Point Base": self.movement_average + self.trigger_point_base})
+            _writer = None
 
 class MP4:
 
@@ -716,7 +712,7 @@ class MP4:
         self.mp4v = None
 
         if not os.path.exists(self.path):
-            log.info('Creating output directory {}'.format(self.path))
+            print('Creating output directory {}'.format(self.path))
             os.makedirs(self.path)
 
     def new_filename(self, nf_version):
@@ -757,8 +753,7 @@ class MotionINI:
         """
         self.filename = 'motion.ini'
         self.config = configparser.ConfigParser(allow_no_value=True)
-        self.sections = ['DISPLAY', 'CAMERA', 'MP4', 'OUTPUT', 'STATISTICS',
-                         'GRAPH', 'MOTION', 'ROI', 'BOX', 'DATE', 'TEMP']
+        self.sections = ['DISPLAY', 'CAMERA', 'MP4', 'OUTPUT', 'STATISTICS', 'GRAPH', 'MOTION', 'ROI', 'BOX', 'DATE']
         self.read_config()
 
     def write(self):
@@ -772,8 +767,8 @@ class MotionINI:
         self.config.set('MP4', '; stabilise', '40')
 
         self.config.set('MOTION', '# Set the level at which motion is started and ends.')
-        self.config.set('MOTION', '; trigger_point', '200')
-        self.config.set('MOTION', '; trigger_point_base', '100')
+        self.config.set('MOTION', 'trigger_point', '200')
+        self.config.set('MOTION', 'trigger_point_base', '100')
         self.config.set('MOTION', '# Use movement window and age to smooth out motion triggering.')
         self.config.set('MOTION', '; movement_window', '30')
         self.config.set('MOTION', '; movement_window_age', '10')
@@ -784,82 +779,70 @@ class MotionINI:
         self.config.set('MOTION', '; subtraction_threshold', '40')
 
         self.config.set('CAMERA', '# Camera Settings.')
-        self.config.set('CAMERA', '; camera_tuning_file',
-                        '/usr/share/libcamera/ipa/rpi/vc4/ov5647_noir.json')
-        self.config.set('CAMERA',
-                        '; camera_controls = {"AeMeteringMode":"controls.AeMeteringModeEnum.Centre",“ExposureLevel”:"2.0"}')
-        self.config.set('CAMERA', '; lores_width', '240')
-        self.config.set('CAMERA', '; lores_height', '135')
-        self.config.set('CAMERA', '; main_width', '960')
-        self.config.set('CAMERA', '; main_height', '540')
-        self.config.set('CAMERA', '; image_horizontal_flip', 'off')
-        self.config.set('CAMERA', '; image_vertical_flip', 'off')
+        self.config.set('CAMERA', '; camera_tuning_file', 'imx708.json')
+        self.config.set('CAMERA', '; camera_controls', '{"AeMeteringMode": controls.AeMeteringModeEnum.Spot}')
+        self.config.set('CAMERA', 'lores_width', '640')
+        self.config.set('CAMERA', 'lores_height', '360')
+        self.config.set('CAMERA', 'main_width', '640')
+        self.config.set('CAMERA', 'main_height', '360')
+        self.config.set('CAMERA', '; image_horizontal_flip', 'on')
+        self.config.set('CAMERA', '; image_vertical_flip', 'on')
         self.config.set('CAMERA', '; zoom_factor', '1.3')
 
-        self.config.set('DISPLAY', '; display', 'off')
-        self.config.set('DISPLAY', '; display_image_width', '480')
-        self.config.set('DISPLAY', '; display_image_height', '270')
+        self.config.set('DISPLAY', 'display', 'on')
+        self.config.set('DISPLAY', 'display_image_width', '640')
+        self.config.set('DISPLAY', 'display_image_height', '360')
 
         self.config.set('OUTPUT', '# Output parameters')
         self.config.set('OUTPUT', '# Execute this after completing output <MP4> will be the mp4 file path.')
         self.config.set('OUTPUT', '; command', 'ln -s /home/pi/Motion/<MP4> /var/www/html/<MP4>')
-        self.config.set('OUTPUT', '; output_dir', 'Motion')
+        self.config.set('OUTPUT', 'output_dir', 'Motion')
         self.config.set('OUTPUT', '# Number of extra frames before and after the event.')
         self.config.set('OUTPUT', '; pre_frames', '20')
         self.config.set('OUTPUT', '; post_frames', '80')
-        self.config.set('OUTPUT', '; timelapse_frame_number', '17')
+        self.config.set('OUTPUT', 'timelapse_frame_number', '17')
+        self.config.set('OUTPUT', '; csv_output', 'on')
+
+        self.config.set('OUTPUT', '; display_frame_cnt', 'on')
+        self.config.set('OUTPUT', '; csv_timings', 'on')
+        self.config.set('OUTPUT', '; yolo_output', 'on')
+        self.config.set('OUTPUT', '; csv_visits_log', 'on')
         self.config.set('OUTPUT', '; csv_output', 'off')
-        # self.config.set('OUTPUT', '; csv_frames_per_second', 'off')
-        self.config.set('OUTPUT', '; display_frame_cnt', 'off')
         self.config.set('OUTPUT', '; csv_timings', 'off')
-        self.config.set('OUTPUT', '; yolo_output', 'off')
-        self.config.set('OUTPUT', '; csv_visits_log', 'off')
-        self.config.set('OUTPUT', '; csv_output', 'off')
-        self.config.set('OUTPUT', '; csv_timings', 'off')
-        self.config.set('OUTPUT', '; csv_fps_monitor', 'off')
-        self.config.set('OUTPUT', '; csv_recording_log', 'off')
-        self.config.set('OUTPUT', '; garbage_collection_debug', 'off')
 
         self.config.set('GRAPH', '# Output a graph on MP4 of jpg if set to on and off is the default.')
-        self.config.set('GRAPH', '; draw_graph', 'off')
-        self.config.set('GRAPH', '; draw_jpg_graph', 'off')
+        self.config.set('GRAPH', '; draw_graph', 'on')
+        self.config.set('GRAPH', 'draw_jpg_graph', 'on')
 
         self.config.set('ROI', '# Define the area of interest.')
         self.config.set('ROI', '; mask_path', 'Motion/props/mask.jpg')
-        self.config.set('ROI', '; display_roi', 'off')
-        self.config.set('ROI', '; display_roi_jpg', 'off')
+        self.config.set('ROI', 'display_roi', 'on')
+        self.config.set('ROI', 'display_roi_jpg', 'on')
         self.config.set('ROI', 'display_roi_thickness', '1')
         self.config.set('ROI', 'display_roi_font_size', '0.7')
-        self.config.set('ROI', 'display_roi_rgb', '245, 183, 0')
+        self.config.set('ROI', 'display_roi_rgb', '255, 0, 0')
 
         self.config.set('BOX', '# Draw a box around the area of movement. <value> is the movement level.')
         self.config.set('BOX', '; box', 'Movement <value>')
-        self.config.set('BOX', '; box_jpg', 'Movement <value>')
+        self.config.set('BOX', 'box_jpg', 'Movement <value>')
         self.config.set('BOX', 'box_thickness', '1')
-        self.config.set('BOX', 'box_font_size', '0.7')
-        self.config.set('BOX', 'box_rgb', '245, 183, 0')
-        self.config.set('BOX', 'box_jpg_rgb', '245, 183, 0')
+        self.config.set('BOX', 'box_font_size', '0.3')
+        self.config.set('BOX', 'box_rgb', '254, 228, 64')
+        self.config.set('BOX', 'box_jpg_rgb', '254, 228, 64')
 
         self.config.set('STATISTICS', '# Display statistics.')
-        self.config.set('STATISTICS', '; statistics', 'off')
-        self.config.set('STATISTICS', '; statistics_jpg', 'off')
-        self.config.set('STATISTICS', 'statistics_font_scale', '0.7')
+        self.config.set('STATISTICS', '; statistics', 'on')
+        self.config.set('STATISTICS', 'statistics_jpg', 'on')
+        self.config.set('STATISTICS', 'statistics_font_scale', '0.4')
         self.config.set('STATISTICS', 'statistics_font_thickness', '1')
-        self.config.set('STATISTICS', 'statistics_rgb', '4,231,98')
-        self.config.set('STATISTICS', '; print_fps', 'off')
+        self.config.set('STATISTICS', 'statistics_rgb', '0, 255, 0')
+        self.config.set('STATISTICS', 'print_fps', 'on')
 
         self.config.set('DATE', '# Print date.')
-        self.config.set('DATE', '; date_position', 'top')
-        self.config.set('DATE', 'date_font_scale', '0.7')
+        self.config.set('DATE', 'date_position', 'top')
+        self.config.set('DATE', 'date_font_scale', '0.4')
         self.config.set('DATE', 'date_font_thickness', '1')
-        self.config.set('DATE', 'date_rgb', '0, 139, 248')
-
-        self.config.set('TEMP', '# Print date.')
-        self.config.set('TEMP', '; temp_position', 'top')
-        self.config.set('TEMP', 'temp_font_scale', '0.7')
-        self.config.set('TEMP', 'temp_font_thickness', '1')
-        self.config.set('TEMP', 'temp_rgb', '138,201,38')
-
+        self.config.set('DATE', 'date_rgb', '4, 231, 98')
 
         with open(self.filename, 'w') as inifile:
             self.config.write(inifile)
@@ -906,39 +889,24 @@ global trigger_point
 global trigger_point_base
 
 
-# def read_configuration(signal_number, frame):
-#     print('(SIGHUP) reading configuration')
-#     return
-
-def detect_movement(dm_roi):
-    """Detect movement and return the areas of movement."""
-    mask = object_detector.apply(dm_roi)
-    _, mask = cv2.threshold(mask, 254, 255, cv2.THRESH_BINARY)
-    dm_contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    return dm_contours
+def read_configuration(signalNumber, frame):
+    print('(SIGHUP) reading configuration')
+    return
 
 
-def load_mask(lm_path):
-    """Load the mask from the given path"""
-    _ret = cv2.imread(lm_path)
-    _h = _ret.shape[0]
-    _w = _ret.shape[1]
-    if not _w == lores_width:
-        _ret = resize_img(_ret, (lores_width, lores_height))
-    return cv2.cvtColor(_ret, cv2.COLOR_BGR2GRAY)
-
-
-def put_frame_cnt(pfc_frame, pfc_cnt):
-    """Write the frame count number on the frame."""
-    text_size, _ = cv2.getTextSize(str(pfc_cnt), font, date_font_scale, date_font_thickness)
+def put_frame_cnt(pfc_frame, frame_count):
+    # Write frame count.
+    wt_font = cv2.FONT_HERSHEY_SIMPLEX
+    text_size, _ = cv2.getTextSize(str(frame_count), wt_font, date_font_scale, date_font_thickness)
     boarder = 5
     line_height = text_size[1]
+    line_length = text_size[0]
     wt_pos = 1 + boarder, line_height + boarder
 
     cv2.putText(pfc_frame,
-                str(pfc_cnt),
+                str(frame_count),
                 wt_pos,
-                font,
+                wt_font,
                 date_font_scale,
                 date_rgb,
                 date_font_thickness,
@@ -946,84 +914,99 @@ def put_frame_cnt(pfc_frame, pfc_cnt):
     return pfc_frame
 
 
-def flip_image(fi_frame, hflip=False, vflip=False):
+def flip_image(frame, hflip=False, vflip=False):
     if hflip and not vflip:
-        fi_frame = cv2.flip(fi_frame, 0)
-        timings_csv.log_point('Rotate Frame')
+        frame = cv2.flip(frame, 0)
     elif vflip and not hflip:
-        fi_frame = cv2.flip(fi_frame, 1)
-        timings_csv.log_point('Rotate Frame')
+        frame = cv2.flip(frame, 1)
     elif vflip and hflip:
-        fi_frame = cv2.flip(fi_frame, -1)
-        timings_csv.log_point('Rotate Frame')
-    return fi_frame
+        frame = cv2.flip(frame, -1)
+    return frame
 
 
-def put_date(pd_frame):
+def put_date(wt_frame):
     """Write data and time on the video"""
     """todo look a font."""
-    pd_now = datetime.now()
-    pd_text = pd_now.strftime("%Y-%m-%d %H:%M:%S")
-    # wt_font = cv2.FONT_HERSHEY_SIMPLEX
-    pd_size, _ = cv2.getTextSize(pd_text, font, date_font_scale, date_font_thickness)
+    wt_now = datetime.now()
+    wt_text = wt_now.strftime("%Y-%m-%d %H:%M:%S")
+    wt_font = cv2.FONT_HERSHEY_SIMPLEX
+    date_size, _ = cv2.getTextSize(wt_text, wt_font, date_font_scale, date_font_thickness)
     boarder = 5
-    line_height = pd_size[1]
-    line_length = pd_size[0]
+    line_height = date_size[1]
+    line_length = date_size[0]
     if date_position == 'top' or draw_graph or draw_jpg_graph:
-        pd_pos = lores_width - line_length - boarder, line_height + boarder
+        wt_pos = lores_width - line_length - boarder, line_height + boarder
     else:
-        pd_pos = lores_width - line_length - boarder, lores_height - line_height - boarder
+        wt_pos = lores_width - line_length - boarder, lores_height - line_height - boarder
 
-    cv2.putText(pd_frame,
-                pd_text,
-                pd_pos,
-                font,
+    cv2.putText(wt_frame,
+                wt_text,
+                wt_pos,
+                wt_font,
                 date_font_scale,
                 date_rgb,
                 date_font_thickness,
                 cv2.LINE_AA)
-    return pd_frame
+    return wt_frame
 
 
-def put_temp(pt_frame):
+def put_date_temp(wt_frame):
+    """Write data, time and temperature on the video"""
+    wt_now = datetime.now()
+    wt_date = wt_now.strftime("%Y-%m-%d %H:%M:%S")
+    wt_font = cv2.FONT_HERSHEY_SIMPLEX
+    date_size, _ = cv2.getTextSize(wt_date, wt_font, date_font_scale, date_font_thickness)
+    boarder = 5
+    date_height = date_size[1]
+    date_length = date_size[0]
+    if date_position == 'top' or draw_graph or draw_jpg_graph:
+        wt_pos = lores_width - date_length - boarder, date_height + boarder
+    else:
+        wt_pos = lores_width - date_length - boarder, lores_height - date_height - boarder
+
+    cv2.putText(wt_frame,
+                wt_date,
+                wt_pos,
+                wt_font,
+                date_font_scale,
+                date_rgb,
+                date_font_thickness,
+                cv2.LINE_AA)
+
     if not temp_position == 'none':
+        wt_temp_text = tempLog.get_temp_c()
+        temp_size, _ = cv2.getTextSize(wt_temp_text, wt_font, temp_font_scale, temp_font_thickness)
         boarder = 5
-        pt_temp_text = temp_log.get_temp_c()
-        pt_temp_size, _ = cv2.getTextSize(pt_temp_text, font, temp_font_scale, temp_font_thickness)
-        pt_now = datetime.now()
-        pt_date = pt_now.strftime("%Y-%m-%d %H:%M:%S")
-        pt_date_size, _ = cv2.getTextSize(pt_date, font, date_font_scale, date_font_thickness)
-        date_height = pt_date_size[1]
-        temp_height = pt_temp_size[1]
-        temp_length = pt_temp_size[0]
-        if date_position == 'top' or draw_graph or draw_jpg_graph:
+        temp_height = temp_size[1]
+        temp_length = temp_size[0]
+        if temp_position == 'top' or draw_graph or draw_jpg_graph:
             pt_pos = lores_width - temp_length - boarder, temp_height + date_height + boarder + boarder
         else:
             pt_pos = lores_width - temp_length - boarder, lores_height - temp_height - date_height - boarder
 
-        cv2.putText(pt_frame,
-                    pt_temp_text,
+        cv2.putText(wt_frame,
+                    wt_temp_text,
                     pt_pos,
-                    font,
+                    wt_font,
                     temp_font_scale,
                     temp_rgb,
                     temp_font_thickness,
                     cv2.LINE_AA)
-    return pt_frame
+    return wt_frame
 
 
 def put_text(pt_frame, pt_text, pt_color):
     position = (5, 20)  # indent and line
-    pt_font = cv2.FONT_HERSHEY_SIMPLEX
+    font = cv2.FONT_HERSHEY_SIMPLEX
     line_type = cv2.LINE_AA
-    text_size, _ = cv2.getTextSize(pt_text, pt_font, statistics_font_scale, statistics_font_thickness)
+    text_size, _ = cv2.getTextSize(pt_text, font, statistics_font_scale, statistics_font_thickness)
     line_height = text_size[1] + 5
-    pt_x, y0 = position
+    x, y0 = position
     for i, line in enumerate(pt_text.split("\n")):
-        pt_y = y0 + i * line_height
+        y = y0 + i * line_height
         cv2.putText(pt_frame,
                     line,
-                    (pt_x, pt_y), pt_font,
+                    (x, y), font,
                     statistics_font_scale,
                     pt_color,
                     statistics_font_thickness,
@@ -1034,7 +1017,6 @@ def put_text(pt_frame, pt_text, pt_color):
 def add_statistics(ps_frame):
     exp_time = round(exposure_controls['ExposureTime'], 2)
     ana_gain = round(exposure_controls['AnalogueGain'], 2)
-    fps = fps_log.get_fps()
     ps_stats = f'Software version: {__version__}\n\
 Frame rates: Record: {image_record_fps} Playback: {image_playback_fps}\n\
 Exposure: {exp_time}, Gain: {ana_gain}\n\
@@ -1044,7 +1026,7 @@ MOG2 Subtraction Threshold: {subtraction_threshold}\n\
 MOG2 Subtraction History: {subtraction_history}\n\
 Total Frames: {frames_written}\n\
 Peak Movement: {movement_peak} at frame: {movement_peak_frame} \n\
-FPS: {fps} \n\
+FPS: {round(fps.get_fps(), 2)} \n\
 Zoom Factor: {zoom_factor} \n\
 Pre Movement Frames: {pre_frames} Post: {post_frames}'
     return put_text(ps_frame, ps_stats, statistics_rgb)
@@ -1070,14 +1052,11 @@ def write_jpg(wj_frame):
 
 
 def write_timelapse_jpg(wtl_frame):
-    """Write timelapse frame"""
     timelapse_path = os.path.join(os.getcwd(), "Motion/timelapse")
     if not os.path.isdir(timelapse_path):
         os.mkdir(timelapse_path)
     timelapse_jpg = os.path.join(timelapse_path, mp4.get_filename().replace('mp4', 'jpg'))
     print('JPEG Path: {}'.format(timelapse_jpg))
-    if temp_position:
-        wtl_frame = put_temp(wtl_frame)
     cv2.imwrite(timelapse_jpg, wtl_frame)
 
 
@@ -1095,27 +1074,27 @@ def run_cmd(rc_cmd):
 
 
 def get_logger():
-    logger = logging.getLogger('motion')
-    if not os.name == 'nt':
-        logger.addHandler(JournalHandler())
-        logger.setLevel(logging.INFO)
+    logger = logging.getLogger(__name__)
+    # journald_handler = JournaldLogHandler()
+    # journald_handler.setFormatter(logging.Formatter('[%(levelname)s] %(message)s'))
+    # logger.addHandler(journald_handler)
+    logger.setLevel(logging.INFO)
     return logger
 
 
-def add_box(ab_frame, ab_area, ab_label, ab_color, ab_thickness=1, ab_font_size=1.0):
-    # ab_x = ab_area[0]
-    # ab_y = ab_area[1]
-    # ab_w = ab_area[2]
-    # ab_h = ab_area[3]
+def add_box(ab_frame, ab_area, ab_label, ab_color, ab_thickness=1, ab_fontsize=1):
+    x = ab_area[0]
+    y = ab_area[1]
+    w = ab_area[2]
+    h = ab_area[3]
     cv2.rectangle(ab_frame, (x, y), (x + w, y + h), ab_color, 1)
-    cv2.putText(ab_frame, ab_label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, ab_font_size, ab_color, ab_thickness)
-    # ab_x = ab_y = ab_w = ab_h = None
+    cv2.putText(ab_frame, ab_label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, ab_fontsize, ab_color, ab_thickness)
     return ab_frame
 
 
 def get_bgr(gb_str):
-    red, green, blue = [int(gbr_c) for gbr_c in gb_str.split(',')]
-    return blue, green, red
+    red, green, blue = [int(c) for c in gb_str.split(',')]
+    return (blue, green, red)
 
 
 def next_index(_index, _buffer_size):
@@ -1125,23 +1104,22 @@ def next_index(_index, _buffer_size):
     return _index
 
 
-def get_centre(gc_contours):
-    cx = cy = None
-    for i in gc_contours:
-        gc_moment = cv2.moments(i)
-        if gc_moment['m00'] != 0:
-            # cx = int(gc_moment['m10'] / gc_moment['m00'])
-            cx = int(gc_moment['m10'] / gc_moment['m00'])
-            cy = int(gc_moment['m01'] / gc_moment['m00'])
+def get_centre(contours):
+    for i in contours:
+        M = cv2.moments(i)
+        if M['m00'] != 0:
+            # cx = int(M['m10'] / M['m00'])
+            cx = int(M['m10'] / M['m00'])
+            cy = int(M['m01'] / M['m00'])
     return cx, cy
 
 
-def draw_roi(draw_roi_mask, image, rgb, thickness, draw_roi_size):
-    mask_edges = cv2.Canny(draw_roi_mask, 10, 100)
-    draw_roi_contours, hierarchy = cv2.findContours(mask_edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-    cx, cy = get_centre(draw_roi_contours)
-    cv2.putText(image, 'ROI', (cx, cy), cv2.FONT_HERSHEY_SIMPLEX, draw_roi_size, rgb, thickness, cv2.LINE_AA)
-    cv2.drawContours(image, draw_roi_contours, -1, rgb, thickness)
+def draw_roi(mask, image, rgb, thickness, size):
+    mask_edges = cv2.Canny(mask, 10, 100)
+    contours, hierarchy = cv2.findContours(mask_edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    cx, cy = get_centre(contours)
+    cv2.putText(image, 'ROI', (cx, cy), cv2.FONT_HERSHEY_SIMPLEX, size, rgb, thickness, cv2.LINE_AA)
+    cv2.drawContours(image, contours, -1, rgb, thickness)
     return image
 
 
@@ -1152,21 +1130,39 @@ def next_movement_index(nmi_index, nmi_buffer_size):
     return nmi_index
 
 
-def average(array):
+def Average(array):
     return round(sum(array) / len(array), 2)
 
 
-def zoom_img(img, zoom_img_factor=1.5):
+"""
+v3.20 Advanced movement detection """
+
+"""
+Return True if the number of frames containing movement exceeds the frame count ceiling.
+"""
+
+
+def check_frame_count():
+    global consecutive_movement_frame_cnt
+    print(f'{consecutive_movement_frame_cnt} >= {movement_window}')
+    if consecutive_movement_frame_cnt >= movement_window:
+        return True
+    else:
+        consecutive_movement_frame_cnt += 1
+        return False
+
+
+def zoom(img, zoom_factor=1.5):
     y_size = img.shape[0]
     x_size = img.shape[1]
     # define new boundaries
-    x1 = int(0.5 * x_size * (1 - 1 / zoom_img_factor))
-    x2 = int(x_size - 0.5 * x_size * (1 - 1 / zoom_img_factor))
-    y1 = int(0.5 * y_size * (1 - 1 / zoom_img_factor))
-    y2 = int(y_size - 0.5 * y_size * (1 - 1 / zoom_img_factor))
+    x1 = int(0.5 * x_size * (1 - 1 / zoom_factor))
+    x2 = int(x_size - 0.5 * x_size * (1 - 1 / zoom_factor))
+    y1 = int(0.5 * y_size * (1 - 1 / zoom_factor))
+    y2 = int(y_size - 0.5 * y_size * (1 - 1 / zoom_factor))
     # first crop image then scale
     img_cropped = img[y1:y2, x1:x2]
-    return cv2.resize(img_cropped, None, fx=zoom_img_factor, fy=zoom_img_factor, interpolation=cv2.INTER_CUBIC)
+    return cv2.resize(img_cropped, None, fx=zoom_factor, fy=zoom_factor, interpolation=cv2.INTER_CUBIC)
 
 
 def resize_img(rs_image, rs_size):
@@ -1175,10 +1171,8 @@ def resize_img(rs_image, rs_size):
     rs_new_height = rs_size[0]
     rs_new_width = rs_size[1]
     if rs_current_width > rs_new_width or rs_current_height > rs_new_height:
-        timings_csv.log_point('Resize Frame')
         return cv2.resize(rs_image, rs_size, interpolation=cv2.INTER_AREA)
     elif rs_current_width < rs_new_width or rs_current_height < rs_new_height:
-        timings_csv.log_point('Resize Frame')
         return cv2.resize(rs_image, rs_size, interpolation=cv2.INTER_LINEAR)
     else:
         return rs_image
@@ -1197,27 +1191,12 @@ def debug_size(_image):
         print(f'Image size is {_image.shape}')
 
 
-def report_process_mem() -> int:
-    process = psutil.Process(os.getpid())
-    mb = process.memory_info().rss / 1024 / 1024
-    print(f"Total memory used: {mb:,.2f} MB.")
-    return mb
-
-
 """
 Start Program
 """
 if __name__ == "motion":
-    gc.set_debug(True)
+    # mp.freeze_support()
     software_version = __version__
-
-    # v3.25 Manage Memory.
-    gc.collect(2)
-    gc.freeze()
-    _, g1, g2 = gc.get_threshold()
-    gc.set_threshold(100_000, g1 * 5, g2 * 10)
-    allocations, g1, g2 = gc.get_threshold()
-    print(f'Garbage collector Allocated:{allocations} g1:{g1} g2:{g2}')
 
     # Check for arguments.
     parser = argparse.ArgumentParser()
@@ -1245,48 +1224,43 @@ if __name__ == "motion":
     # Read INI file.
     mini = MotionINI()
 
-    # analogue_gain = float(mini.get_parameter('CAMERA', 'analogue_gain', '0.0'))
     box = mini.get_parameter('BOX', 'box', 'OFF')
     box_font_size = float(mini.get_parameter('BOX', 'box_font_size', '0.5'))
     box_jpg = mini.get_parameter('BOX', 'box_jpg', 'OFF')
-    box_rgb = get_bgr(mini.get_parameter('BOX', 'box_rgb', '245,183,0'))
+    box_rgb = get_bgr(mini.get_parameter('BOX', 'box_rgb', '255,255,255'))
     box_thickness = int(mini.get_parameter('BOX', 'box_thickness', '1'))
     camera_controls = mini.get_parameter('CAMERA', 'camera_controls', 'off')
     camera_tuning_file = mini.get_parameter('CAMERA', 'camera_tuning_file', 'off')
     command = mini.get_parameter('OUTPUT', 'command', 'None')
     csv_output = mini.get_parameter('OUTPUT', 'csv_output', 'off')
     csv_timings = mini.get_parameter('OUTPUT', 'csv_timings', 'off')
-    csv_fps_monitor = mini.get_parameter('OUTPUT', 'csv_fps_monitor', 'off')
-    csv_recording_log = mini.get_parameter('OUTPUT', 'csv_recording_log', 'off')
     csv_visits_log = mini.get_parameter('OUTPUT', 'csv_visits_log', 'off')
-    date_font_scale = float(mini.get_parameter('DATE', 'date_font_scale', '0.7'))
+    date_font_scale = float(mini.get_parameter('DATE', 'date_font_scale', '1.0'))
     date_font_thickness = int(mini.get_parameter('DATE', 'date_font_thickness', '1'))
     date_position = mini.get_parameter('DATE', 'date_position', 'none')
-    date_rgb = get_bgr(mini.get_parameter('DATE', 'date_rgb', '0,139,248'))
+    date_rgb = get_bgr(mini.get_parameter('DATE', 'date_rgb', '255,255,255'))
     display = mini.get_parameter('DISPLAY', 'display', 'off')
     display_frame_cnt = mini.get_parameter('OUTPUT', 'display_frame_cnt', 'off')
-    display_image_height = int(mini.get_parameter('DISPLAY', 'display_image_height', '270'))
-    display_image_width = int(mini.get_parameter('DISPLAY', 'display_image_width', '480'))
+    display_image_height = int(mini.get_parameter('DISPLAY', 'display_image_height', '480'))
+    display_image_width = int(mini.get_parameter('DISPLAY', 'display_image_width', '640'))
     display_roi = mini.get_parameter('ROI', 'display_roi', 'off')
-    display_roi_font_size = float(mini.get_parameter('ROI', 'display_roi_font_size', '0.7'))
+    display_roi_font_size = float(mini.get_parameter('ROI', 'display_roi_font_size', '0.5'))
     display_roi_jpg = mini.get_parameter('ROI', 'display_roi_jpg', 'off')
-    display_roi_rgb = get_bgr(mini.get_parameter('ROI', 'display_roi_rgb', '245,183,0'))
+    display_roi_rgb = get_bgr(mini.get_parameter('ROI', 'display_roi_rgb', '255,255,255'))
     display_roi_thickness = int(mini.get_parameter('ROI', 'display_roi_thickness', '1'))
     draw_graph = mini.get_parameter('GRAPH', 'draw_graph', 'off')
     draw_jpg_graph = mini.get_parameter('GRAPH', 'draw_jpg_graph', 'off')
-    # exposure_time = int(mini.get_parameter('CAMERA', 'exposure_time', '0'))
-    garbage_collection_debug = mini.get_parameter('OUTPUT', 'garbage_collection_debug', 'off')
 
+    image_height = int(mini.get_parameter('OUTPUT', 'image_height', '480'))
     image_horizontal_flip = bool(mini.get_parameter('CAMERA', 'image_horizontal_flip', 'off'))
     image_playback_fps = int(mini.get_parameter('MP4', 'image_playback_fps', 30))
     image_record_fps = int(mini.get_parameter('MP4', 'image_record_fps', 30))
     image_vertical_flip = bool(mini.get_parameter('CAMERA', 'image_vertical_flip', 'off'))
-    image_height = int(mini.get_parameter('OUTPUT', 'image_height', '135'))
-    image_width = int(mini.get_parameter('CAMERA', 'image_width', '240'))
-    lores_height = int(mini.get_parameter('CAMERA', 'lores_height', '270'))
-    lores_width = int(mini.get_parameter('CAMERA', 'lores_width', '480'))
-    main_height = int(mini.get_parameter('CAMERA', 'main_height', '540'))
-    main_width = int(mini.get_parameter('CAMERA', 'main_width', '960'))
+    image_width = int(mini.get_parameter('CAMERA', 'image_width', '640'))
+    lores_height = int(mini.get_parameter('CAMERA', 'lores_height', '360'))
+    lores_width = int(mini.get_parameter('CAMERA', 'lores_width', '640'))
+    main_height = int(mini.get_parameter('CAMERA', 'main_height', '720'))
+    main_width = int(mini.get_parameter('CAMERA', 'main_width', '1280'))
     mask_path = mini.get_parameter('ROI', 'mask_path', 'off')
     movement_window = int(mini.get_parameter('MOTION', 'movement_window', '0'))
     movement_window_age = int(mini.get_parameter('MOTION', 'movement_window_age', '0'))
@@ -1296,17 +1270,17 @@ if __name__ == "motion":
     pre_frames = int(mini.get_parameter('OUTPUT', 'pre_frames', '1'))
     stabilise = int(mini.get_parameter('MP4', 'stabilise', '10'))
     statistics = mini.get_parameter('STATISTICS', 'statistics', 'off')
-    statistics_font_scale = float(mini.get_parameter('STATISTICS', 'statistics_font_scale', '0.7'))
+    statistics_font_scale = float(mini.get_parameter('STATISTICS', 'statistics_font_scale', '1.0'))
     statistics_font_thickness = int(mini.get_parameter('STATISTICS', 'statistics_font_thickness', '1'))
     statistics_jpg = mini.get_parameter('STATISTICS', 'statistics_jpg', 'off')
-    statistics_rgb = get_bgr(mini.get_parameter('STATISTICS', 'statistics_rgb', '4,231,98'))
+    statistics_rgb = get_bgr(mini.get_parameter('STATISTICS', 'statistics_rgb', '255,255,255'))
     subtraction_history = int(mini.get_parameter('MOTION', 'subtraction_history', 100))
     subtraction_threshold = int(mini.get_parameter('MOTION', 'subtraction_threshold', 40))
 
-    temp_font_scale = float(mini.get_parameter('TEMP', 'temp_font_scale', '0.6'))
+    temp_font_scale = float(mini.get_parameter('TEMP', 'temp_font_scale', '1.0'))
     temp_font_thickness = int(mini.get_parameter('TEMP', 'temp_font_thickness', '1'))
     temp_position = mini.get_parameter('TEMP', 'temp_position', 'none')
-    temp_rgb = get_bgr(mini.get_parameter('TEMP', 'temp_rgb', '220,0,115'))
+    temp_rgb = get_bgr(mini.get_parameter('TEMP', 'temp_rgb', '255,255,255'))
     temp_font = mini.get_parameter('TEMP', 'temp_font', 'cv2.FONT_HERSHEY_SIMPLEX')
 
     timelapse_frame_number = int(mini.get_parameter('OUTPUT', 'timelapse_frame_number', '0'))
@@ -1320,10 +1294,11 @@ if __name__ == "motion":
     zoom_factor = float(mini.get_parameter('CAMERA', 'zoom_factor', 0))
 
     # Instantiate movementCSV file writing.
-    movement_csv = MovementCSV()
+    mcsv = None
     if csv_output:
-        movement_csv.update_parameters(trigger_point, trigger_point_base, trigger_point_frames, subtraction_threshold,
-                                       subtraction_history, movement_window, movement_window_age)
+        mcsv = MovementCSV()
+        mcsv.update_parameters(trigger_point, trigger_point_base, trigger_point_frames, subtraction_threshold,
+                               subtraction_history, movement_window, movement_window_age)
 
     # Instantiate Trigger CSV class,
     trigger_csv = TriggerCSV(trigger_point, trigger_point_base, trigger_point_csv_window, movement_window,
@@ -1335,16 +1310,8 @@ if __name__ == "motion":
     else:
         visits = None
 
-    # v3.20 Log recording times.
-    if csv_recording_log:
-        cvs_recording_times = RecordingLogCSV()
-
     # Instantiate temperature data class.
-    temp_log = TempCSV()
-
-    # Track the Frames Per Second.
-    fps_log = FPSLogCSV(image_record_fps)
-    fps_log.delete()
+    tempLog = TempCSV()
 
     # Read the version ini file.
     version_class = Version()
@@ -1353,16 +1320,25 @@ if __name__ == "motion":
     # Enable a graph.
     graph = Graph(lores_width, lores_height, 10, trigger_point_base, trigger_point)
 
-    # Redundant Enable fps counting.
-    # fps = FPS()
+    # Enable fps counting.
+    fps = FPS()
 
     # Instantiate tracker.
     tracker = MovementTracker()
 
     # Get mask image.
-    mask_img = False
     if mask_path and os.path.exists(mask_path):
-        mask_img = load_mask(mask_path)
+        mask_img = cv2.imread(mask_path)
+        mask_height = mask_img.shape[0]
+        mask_width = mask_img.shape[1]
+        if not mask_width == lores_width:
+            mask_img = resize_img(mask_img, (lores_width, lores_height))
+            # mask_img = cv2.resize(mask_img, (lores_width, lores_height), interpolation=cv2.INTER_LINEAR)
+        mask_img = cv2.cvtColor(mask_img, cv2.COLOR_BGR2GRAY)
+        log.info(f'Loaded mask template {mask_path}')
+    else:
+        log.info('Mask template is not loaded')
+        mask_path = False
 
     # Initialise Variables
     size = (lores_width, lores_height)
@@ -1375,8 +1351,7 @@ if __name__ == "motion":
     movement_peak_frame = 0  # Log the frame number where peak movement occurs.
     mean_average_movement = 0  # The average amount of movement than caused a trigger record.
     object_detector = cv2.createBackgroundSubtractorMOG2(history=subtraction_history,
-                                                         varThreshold=subtraction_threshold,
-                                                         detectShadows=True)
+                                                         varThreshold=subtraction_threshold)
     exposure_controls = None
     focus_controls = None
     consecutive_movement_frame_cnt = 0  # Used by motion detection.
@@ -1386,7 +1361,7 @@ if __name__ == "motion":
         log.info(f'Using tuning file {camera_tuning_file}')
         tuning = Picamera2.load_tuning_file(camera_tuning_file)
         algo = Picamera2.find_tuning_algo(tuning, "rpi.agc")
-        picam2 = Picamera2(tuning=tuning)
+        picam2 = Picamera2()
         picam2.set_controls({"FrameRate": int(image_record_fps)})
         log.info(f'Setting FPS to {image_record_fps}.')
 
@@ -1396,7 +1371,7 @@ if __name__ == "motion":
         if camera_tuning_file == 'imx708.json':
             picam2.set_controls({"AfMode": controls.AfModeEnum.Auto,
                                  "AfMetering": controls.AfMeteringEnum.Auto})
-            # print('Set auto focus mode.')
+            print('Set auto focus mode.')
             log.info('Set auto focus mode.')
 
         log.info(f'Using {camera_tuning_file} tuning file.')
@@ -1447,48 +1422,38 @@ if __name__ == "motion":
     recording_flag = False  # True when the Graph indicates recording is in progress.
     frames_required = 0
     contour = (0, 0, 0, 0)
-    contours = None
     resize = False
     stabilised = False
     signal_frame_cnt = 0
     average_window_cnt = 0  # Used to ensure all stored frame values are populated.
-    date_size = None  # Stores the size of the data on the output.
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    debug_gc_counter = 0
-    movement_triggered_by_signal = False
 
     # Instantiate timings.
-    timings_csv = TimingsCSV(enabled=csv_timings, grace=subtraction_history)
+    tcsv = timingsCSV(enabled=csv_timings, grace=subtraction_history)
 
     # =========================================
-    # Main loop.
+    # Main process loop.
     # =========================================
     while not killer.kill_now:
-
-        if gc.get_debug():
-            debug_gc_counter -= 1
-            if debug_gc_counter < 1:
-                gc.set_debug(False)
-
         # Read Images
-        timings_csv.log_point('Start Loop', start=True)
+        tcsv.log_point('Start Loop', start=True)
         main_frame = picam2.capture_array()
-        timings_csv.log_point('Read Frame')
+        tcsv.log_point('Read Frame')
 
         if not zoom_factor == 0:
-            main_frame = zoom_img(main_frame, zoom_factor)
-            timings_csv.log_point(f'Zoom factor {zoom_factor}')
+            main_frame = zoom(main_frame, zoom_factor)
+            tcsv.log_point(f'Zoom factor {zoom_factor}')
+            tcsv.log_point('Zoom Frame')
 
         # Resize the frame.
         frame = resize_img(main_frame, (lores_width, lores_height))
-        # timings_csv.log_point('Resize Frame')
+        tcsv.log_point('Resize Frame')
 
         # Rotate the image if needed.
         frame = flip_image(frame, image_horizontal_flip, image_vertical_flip)
-        # timings_csv.log_point('Rotate Frame')
+        tcsv.log_point('Rotate Frame')
 
         # Log Frames per second.
-        # redundant now fps()
+        fps()
 
         # For debugging check frame number.
         if signal_frame > 0 and signal_frame_cnt < signal_frame:
@@ -1496,20 +1461,23 @@ if __name__ == "motion":
             print(f'SigFrame: {signal_frame} Signal frame count: {signal_frame_cnt}')
 
         # Apply the mask.
-        if mask_img:
+        if mask_path:
             roi = cv2.bitwise_and(frame, frame, mask=mask_img)
-            timings_csv.log_point('Apply Mask')
+            tcsv.log_point('Apply Mask')
         else:
             roi = frame
 
         # Detect movement.
-        contours = detect_movement(roi)
-        timings_csv.log_point('Detect movement')
+        mask = object_detector.apply(roi)
+        tcsv.log_point('Applied MOG2')
+        _, mask = cv2.threshold(mask, 254, 255, cv2.THRESH_BINARY)
+        contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        tcsv.log_point('Found contours')
 
-        # Add date.
+        # Add timestamp.
         if date_position == 'top' or date_position == 'bottom':
-            frame = put_date(frame)
-            timings_csv.log_point('Add date')
+            frame = put_date_temp(frame)
+            tcsv.log_point('Add Timestamp')
 
         # Save the frame to the buffer_frame.
         index = next_index(index, pre_frames)
@@ -1526,13 +1494,8 @@ if __name__ == "motion":
             else:
                 stabilised = True
 
-        # Monitor the fps.
-        if csv_fps_monitor:
-            fps_log.monitor_fps()
-
         # find the biggest contour (c) by the area and save it.
         if len(contours) > 1:
-            # Find the largest area of movement.
             c = max(contours, key=cv2.contourArea)
             x, y, w, h = cv2.boundingRect(c)
             buffered_bounding_rect[index] = (x, y, w, h)
@@ -1542,7 +1505,7 @@ if __name__ == "motion":
         else:
             buffered_movement = np.append(buffered_movement, 0)
             buffered_bounding_rect[index] = (0, 0, 0, 0)
-            c = x = y = w = h = None
+            c = x = w = h = None
 
         # Trim the movement buffer.
         buffered_movement = buffered_movement[((movement_window + movement_window_age) + 1) * -1::]
@@ -1554,26 +1517,27 @@ if __name__ == "motion":
                 break
             if key == 32:
                 motion.sig_usr1 = True
+
             display_frame = resize_img(buffer[index], (display_image_width, display_image_height))
             cv2.imshow('Live Data', display_frame)
+
+        # Get the average movement over the movement window using movement_window_age.
+        mean_movement = round(np.mean(buffered_movement[:(movement_window + movement_window_age + 1)]))
+        mean_trigger_point = mean_movement + trigger_point
+        mean_trigger_point_base = mean_movement + trigger_point_base
+
+        # Ensure the buffered_movement buffer is fully populated.
+        if buffered_movement.size < movement_window + movement_window_age:
+            continue
+
+        old_mean_movement = round(
+            np.mean(buffered_movement[-(movement_window + movement_window_age):-(movement_window_age - 1)]))
+        old_mean_trigger_point_base = old_mean_movement + trigger_point_base
+        old_mean_trigger_point = old_mean_movement + trigger_point
 
         # Check for movement. Compare the mean movement level with this movement level.
         # Do this after the movement buffer is complete.
         if movement_window_age > 0:
-            # Get the average movement over the movement window using movement_window_age.
-            mean_movement = round(np.mean(buffered_movement[:(movement_window + movement_window_age + 1)]))
-            mean_trigger_point = mean_movement + trigger_point
-            mean_trigger_point_base = mean_movement + trigger_point_base
-
-            # Ensure the buffered_movement buffer is fully populated.
-            if buffered_movement.size < movement_window + movement_window_age:
-                continue
-
-            old_mean_movement = round(
-                np.mean(buffered_movement[-(movement_window + movement_window_age):-(movement_window_age - 1)]))
-            old_mean_trigger_point_base = old_mean_movement + trigger_point_base
-            old_mean_trigger_point = old_mean_movement + trigger_point
-
             trigger_csv.log_movement(old_mean_trigger_point, old_mean_trigger_point_base, mean_movement)
             if movement_flag:
                 movement_triggered = False
@@ -1601,11 +1565,14 @@ if __name__ == "motion":
                     movement_triggered = True
                     trigger_csv.movement_triggered()
 
-        timings_csv.log_point('Check for movement complete')
+        tcsv.log_point('Check movement')
 
         # Send the motion level to the CSV class.
         if csv_output:
-            movement_csv.log_level(movement_level)
+            mcsv.log_level(movement_level,
+                           mean_movement,
+                           mean_trigger_point,
+                           mean_trigger_point_base)
 
         # Stabilise the camera
         if not stabilised:
@@ -1629,27 +1596,19 @@ if __name__ == "motion":
             jpg_frame = np.copy(buffer[index])
             yolo_peak_movement_frame = np.copy(main_frame)
             motion.sig_usr1 = False
-            movement_triggered_by_signal = True
             trigger_csv.movement_triggered()
 
             if csv_output:
-                movement_csv.motion_write(sighup=True)
+                mcsv.motion_write(sighup=True)
 
         # If SIGUSR2 trigger a timings output.
         if output.sig_usr2:
             log.info('Manual SIGUSR2 detected.')
-            # PMG timings_csv = timingsCSV(enabled=csv_timings)
-            timings_csv.delete()
-            timings_csv.enabled = True
-            timings_csv.record_cnt = 0
+            # PMG tcsv = timingsCSV(enabled=csv_timings)
+            tcsv.enabled = True
             output.sig_usr2 = False
-            with open('memory.txt', 'a') as gc_file:
-                print(f'Memory Usage at {datetime.now()} is {report_process_mem()}', file=gc_file)
-            debug_gc_counter = 1000
-            gc.set_debug(True)
-            # gc.set_debug(gc.DEBUG_LEAK)
-            log.info('SIGUSR2 Triggered')
 
+        # if movement is detected trigger recording.
         if movement_flag:
             if mp4.is_open():
                 frames_required = post_frames + 1
@@ -1660,19 +1619,11 @@ if __name__ == "motion":
                 frames_required = pre_frames + post_frames + 1
                 log.info('Opening {name}...'.format(name=mp4.get_filename()))
                 exposure_controls = get_exposure()
-
-                # v3.20 Log recording times.
-                if csv_recording_log:
-                    cvs_recording_times.start_recording()
-
-            if timelapse_frame_number > 0 and timelapse_frame_number == frames_written:
-                write_timelapse_jpg(buffered_frame)
-
-            if draw_jpg_graph or draw_graph and not recording_flag:
-                recording_flag = graph.put_start_icon()
+                if draw_jpg_graph or draw_graph and not recording_flag:
+                    recording_flag = graph.put_start_icon()
 
             if csv_output:
-                movement_csv.log_motion(movement_level)
+                mcsv.log_motion(movement_level)
 
         # Send the stop recording icon to the graph 12 frames before end recording,
         if draw_jpg_graph or draw_graph:
@@ -1696,11 +1647,11 @@ if __name__ == "motion":
                         bounding_box = cv2.boundingRect(c)
                         box_text = box_jpg.replace('<value>', str(movement_level))
                         jpg_frame = add_box(jpg_frame, bounding_box, box_text, box_rgb, box_thickness, box_font_size)
-                        timings_csv.log_point('Draw Movement Box on JPG')
+                        tcsv.log_point('Draw Movement Box on JPG')
 
             # Write Graph.
             graph.update_frame(int(buffered_movement[-1::]))
-            timings_csv.log_point('Update Graph Frame')
+            tcsv.log_point('Update Graph Frame')
 
             # Draw graph
             if draw_graph:
@@ -1724,15 +1675,12 @@ if __name__ == "motion":
                     box_text = box.replace('<value>', str(buffered_movement[-1::]))
                     buffer[index] = add_box(buffer[index], (x, y, w, h),
                                             box_text, box_rgb, box_thickness, box_font_size)
-                    timings_csv.log_point('Draw Movement Box on MP4')
-
-            if temp_position:
-                buffered_frame = put_temp(buffered_frame)
+                    tcsv.log_point('Draw Movement Box on MP4')
 
             frames_required -= 1
             frames_written += 1
             writer.write(buffered_frame)
-            timings_csv.log_point('Write Video Frame')
+            tcsv.log_point('Write Video Frame')
 
             if display:
                 display_buffered_frame = resize_img(buffered_frame, (display_image_width, display_image_height))
@@ -1741,6 +1689,8 @@ if __name__ == "motion":
             if mp4.is_open():
                 # journal.write(f'Closing {mp4.get_filename()}')
                 # Write Timelapse JPG before any decorations are added to the frame.
+                if timelapse_frame_number > 0:
+                    write_timelapse_jpg(buffered_frame)
 
                 # Write last frame here.
                 if statistics:
@@ -1754,10 +1704,10 @@ if __name__ == "motion":
 
                 writer.write(buffered_frame)
                 mp4.close()
-                timings_csv.log_point('Close Video ')
+                tcsv.log_point('Close Video ')
 
                 write_jpg(jpg_frame)
-                timings_csv.log_point('Write JPEG')
+                tcsv.log_point('Write JPEG')
 
                 # csv_path = 'Motion/testTrigger.csv'
                 csv_path = mp4.get_pathname().replace('mp4', 'csv')
@@ -1766,43 +1716,29 @@ if __name__ == "motion":
                 # Update the version number ini file and get the next number.
                 version_num = version_class.write_version()
 
-                # v3.20 Log recording times.
-                if csv_recording_log:
-                    cvs_recording_times.end_recording()
-
                 # Run the command to copy over the mp4 file.
                 if not command == "None":
                     cmd = command.replace('<MP4>', mp4.get_filename())
                     log.info('Command after replace is:{}'.format(cmd))
                     run_cmd(cmd)
+                else:
+                    log.info('Command not run')
 
                 # Update peak movement.
                 if csv_output:
-                    movement_csv.motion_write()
+                    mcsv.motion_write()
 
                 # Save YOLO image.
                 if yolo_output:
                     yolo_peak_movement_frame = flip_image(yolo_peak_movement_frame, image_horizontal_flip,
                                                           image_vertical_flip)
                     write_yolo_jpg(yolo_peak_movement_frame)
-                    timings_csv.log_point('Write YOLO')
-
-                movement_triggered_by_signal = False
+                    tcsv.log_point('Write YOLO')
 
                 # Reset flags.
                 movement_peak = 0
                 frames_written = 0
                 movement_frame_cnt = 0
-
-                main_frame = None
-                frame = None
-
-                # Manual garbage collection
-                # collected = gc.collect()
-
-                # if camera_controls:
-                #     with open('garbage.txt', 'a') as gc_file:
-                #         print(f'Garbage collector: collected {collected}', file=gc_file)
 
                 # Display recorded image.
                 if display:
@@ -1812,7 +1748,6 @@ if __name__ == "motion":
     picam2.close()
     log.info('Closing camera...')
 
-    # Close windows.
     if display:
         cv2.destroyAllWindows()
 
@@ -1821,4 +1756,8 @@ if __name__ == "motion":
         mp4.close()
 
     log.info('Exit Motion.')
+
+    s_track.print_diff()
+
     sys.exit(0)
+

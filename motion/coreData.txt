@@ -1,0 +1,17 @@
+arm_freq=1800
+core_freq=500
+core_freq_min=200
+gpu_freq=500
+gpu_freq_min=250
+over_voltage_avs=-30000
+arm:    frequency(48)=1800404352
+core:   frequency(1)=500000992
+h264:   frequency(28)=0
+isp:    frequency(45)=500000992
+v3d:    frequency(46)=500000992
+core:   volt=0.9160V
+sdram_c:        volt=1.1000V
+sdram_i:        volt=1.1000V
+sdram_p:        volt=1.1000V
+temp=67.2'C
+throttled=0x0
