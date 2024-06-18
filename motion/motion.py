@@ -78,10 +78,11 @@ v3.29   10/04/2024 Implement a last occupied time for the socket server.
 v3.30   18/04/2024 Include a log of recording times.
 v3.31   22/04/2024 Use recording CSV to check recording status.
 v3.32   25/04/2024 Remove the socket server.
+v3.33   02/06/2024 Mask mask_path causes a crash.
 """
 __author__ = "Peter Goodgame"
 __name__ = "motion"
-__version__ = "v3.32"
+__version__ = "v3.33"
 
 import gc
 import os
@@ -1496,7 +1497,7 @@ if __name__ == "motion":
             print(f'SigFrame: {signal_frame} Signal frame count: {signal_frame_cnt}')
 
         # Apply the mask.
-        if mask_img:
+        if mask_path:
             roi = cv2.bitwise_and(frame, frame, mask=mask_img)
             timings_csv.log_point('Apply Mask')
         else:

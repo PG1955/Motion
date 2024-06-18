@@ -3,7 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/Motion.iml" filepath="$PROJECT_DIR$/.idea/Motion.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../gpio/.idea/gpio.iml" filepath="$PROJECT_DIR$/../gpio/.idea/gpio.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../attacks/.idea/attacks.iml" filepath="$PROJECT_DIR$/../attacks/.idea/attacks.iml" />
     </modules>
   </component>
 </project>
